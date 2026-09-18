@@ -1,0 +1,14 @@
+{% extends "web/base.html" %}
+{% block title %}Search · Promptly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">{% if query %}Results for “{{ query }}”{% else %}Search{% endif %}</h1>
+
+{% if query %}
+  {% with posts=results %}{% include "web/partials/post_grid.html" %}{% endwith %}
+{% else %}
+  <div class="empty-state">
+    <p>Type something in the search bar above — titles, prompts, tags, AI models or creators.</p>
+  </div>
+{% endif %}
+{% endblock %}

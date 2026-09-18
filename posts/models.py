@@ -60,6 +60,7 @@ class Post(models.Model):
         PROMPT = "prompt", "Prompt"
         IMAGE = "image", "Image"
         VIDEO = "video", "Video"
+        AUDIO = "audio", "Audio"
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -84,6 +85,29 @@ class Post(models.Model):
     prompt = models.TextField(
         blank=True,
         default="",
+    )
+
+    image = models.ImageField(
+        upload_to="posts/images/",
+        blank=True,
+        null=True,
+        help_text="Generated image attached to an image post.",
+    )
+
+    video = models.FileField(
+        upload_to="posts/videos/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["mp4", "webm", "mov"])],
+        help_text="Generated video attached to a video post.",
+    )
+
+    audio = models.FileField(
+        upload_to="posts/audio/",
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=["mp3", "wav", "ogg", "m4a"])],
+        help_text="Generated audio attached to an audio post.",
     )
 
     category = models.ForeignKey(

@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}
+{% block title %}Notifications · Promptly{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="page-title">Notifications</h1>
+  <button class="btn btn-ghost btn-sm" id="mark-all-read">Mark all as read</button>
+</div>
+
+<ul class="notification-list" data-unread-count="{{ unread_notifications }}">
+  {% for n in notifications %}
+    <li class="notification {% if not n.is_read %}unread{% endif %}" data-id="{{ n.id }}">
+      <span class="notification-icon type-{{ n.type }}">
+        {% if n.type == "like" %}♥{% elif n.type == "save" %}🔖{% elif n.type == "comment" %}💬{% else %}➕{% endif %}
+      </span>
+      <div class="notification-body">
+        <p>
+          <a class="creator-name" href="{% url 'web:profile' n.actor.username %}">@{{ n.actor.username }}</a>
+          {% if n.type == "like" %}liked your post{% elif n.type == "save" %}saved your post{% elif n.type == "comment" %}commented on your post{% else %}started following you{% endif %}
+          {% if n.post %}<a href="{% url 'web:post-detail' n.post.id %}">“{{ n.post.title }}”</a>{% endif %}
+        </p>
+        <span class="muted">{{ n.created_at|date:"M j, Y H:i" }}</span>
+      </div>
+    </li>
+  {% empty %}
+    <li class="empty-state"><p>No notifications yet.</p></li>
+  {% endfor %}
+</ul>
+{% endblock %}

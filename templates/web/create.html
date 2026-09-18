@@ -1,0 +1,67 @@
+{% extends "web/base.html" %}
+{% block title %}Create · Promptly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Share a prompt</h1>
+
+<form class="create-form" id="create-form" enctype="multipart/form-data">
+  <label class="field">
+    <span>Title</span>
+    <input type="text" name="title" maxlength="200" required placeholder="e.g. Cinematic portrait generator">
+  </label>
+
+  <label class="field">
+    <span>Type</span>
+    <select name="post_type" id="id_post_type">
+      <option value="prompt">Prompt</option>
+      <option value="image">Image</option>
+      <option value="video">Video</option>
+      <option value="audio">Audio</option>
+    </select>
+  </label>
+
+  <label class="field">
+    <span>Category</span>
+    <select name="category_id" required>
+      <option value="" disabled selected>Choose a category…</option>
+      {% for category in category_options %}
+        <option value="{{ category.id }}">{{ category.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="field">
+    <span>AI model <small>(optional)</small></span>
+    <input type="text" name="ai_model" maxlength="100" placeholder="e.g. GPT-5, Midjourney, Sora">
+  </label>
+
+  <label class="field">
+    <span>The prompt</span>
+    <textarea name="prompt" rows="6" placeholder="Paste the prompt you used…"></textarea>
+  </label>
+
+  <label class="field">
+    <span>Description <small>(optional)</small></span>
+    <textarea name="description" rows="3" placeholder="What makes this prompt special?"></textarea>
+  </label>
+
+  <div id="media-upload-fields">
+    <label class="field" id="image-field">
+      <span>Image</span>
+      <input type="file" name="image" accept="image/*">
+    </label>
+    <label class="field" id="video-field" hidden>
+      <span>Video</span>
+      <input type="file" name="video" accept="video/mp4,video/webm,video/quicktime">
+    </label>
+    <label class="field" id="audio-field" hidden>
+      <span>Audio</span>
+      <input type="file" name="audio" accept="audio/*">
+    </label>
+  </div>
+
+  <div class="form-error" id="create-error" hidden></div>
+
+  <button class="btn btn-primary btn-lg" type="submit">Publish</button>
+</form>
+{% endblock %}

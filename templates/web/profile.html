@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% block title %}@{{ profile_user.username }} · Promptly{% endblock %}
+
+{% block content %}
+<section class="profile-head">
+  <div class="profile-avatar">{{ profile_user.display_name|first|default:"?"|upper }}</div>
+  <div class="profile-info">
+    <h1 class="profile-name">
+      {{ profile_user.display_name|default:profile_user.username }}
+      {% if profile_user.is_verified %}<span class="verified">✔</span>{% endif %}
+    </h1>
+    <p class="muted">@{{ profile_user.username }}</p>
+    {% if profile_user.biography %}<p class="profile-bio">{{ profile_user.biography }}</p>{% endif %}
+    <div class="profile-stats">
+      <span><strong>{{ posts|length }}</strong> posts</span>
+      <span><strong>{{ follower_count }}</strong> followers</span>
+      <span><strong>{{ following_count }}</strong> following</span>
+      {% if profile_user.level %}<span class="chip">Level {{ profile_user.level }}</span>{% endif %}
+    </div>
+  </div>
+  {% if user.is_authenticated and user.username != profile_user.username %}
+    <button class="btn btn-outline follow-btn {% if is_following %}is-active{% endif %}"
+            data-action="follow" data-username="{{ profile_user.username }}">
+      {% if is_following %}Following{% else %}Follow{% endif %}
+    </button>
+  {% endif %}
+</section>
+
+{% with posts=posts %}{% include "web/partials/post_grid.html" %}{% endwith %}
+{% endblock %}

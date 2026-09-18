@@ -1,0 +1,9 @@
+{% extends "web/base.html" %}
+{% block title %}{{ category.name }} · Promptly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">{{ category.name }}</h1>
+{% if category.description %}<p class="muted">{{ category.description }}</p>{% endif %}
+
+{% with posts=posts %}{% include "web/partials/post_grid.html" %}{% endwith %}
+{% endblock %}

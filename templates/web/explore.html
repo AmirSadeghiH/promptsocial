@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% block title %}Explore · Promptly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Explore</h1>
+
+<section class="section">
+  <h2 class="section-title">🔥 Trending now</h2>
+  {% with posts=explore.trending next_cursor="" %}
+    {% include "web/partials/post_grid.html" %}
+  {% endwith %}
+</section>
+
+<div class="two-col">
+  <section class="section">
+    <h2 class="section-title">Popular categories</h2>
+    <div class="category-cards">
+      {% for category in explore.popular_categories %}
+        <a class="category-card" href="{% url 'web:category' category.slug %}">
+          <span class="category-name">{{ category.name }}</span>
+          <span class="category-count">{{ category.post_count }} posts</span>
+        </a>
+      {% empty %}
+        <p class="muted">No categories with posts yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Creators to follow</h2>
+    <div class="creator-list">
+      {% for creator in explore.popular_creators %}
+        <a class="creator-row" href="{% url 'web:profile' creator.username %}">
+          <span class="creator-avatar lg">{{ creator.display_name|first|default:"?"|upper }}</span>
+          <span class="creator-info">
+            <span class="creator-name">{{ creator.display_name }}</span>
+            <span class="muted">{{ creator.post_count }} posts</span>
+          </span>
+          {% if creator.is_verified %}<span class="verified">✔</span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="muted">No creators yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="section">
+  <h2 class="section-title">✨ Just added</h2>
+  {% with posts=explore.latest next_cursor="" %}
+    {% include "web/partials/post_grid.html" %}
+  {% endwith %}
+</section>
+{% endblock %}

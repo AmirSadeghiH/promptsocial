@@ -1,0 +1,118 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>{% block title %}Promptly — Share AI Prompts{% endblock %}</title>
+  <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+  <link rel="icon" href="{% static 'icons/icon-192.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <a class="logo" href="{% url 'web:home' %}">
+      <span class="logo-mark">◆</span>
+      <span class="logo-text">Promptly</span>
+    </a>
+
+    <form class="search" action="{% url 'web:search' %}" method="get" role="search">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" name="q" placeholder="Search prompts..." value="{{ query|default:'' }}" autocomplete="off">
+      <kbd>/</kbd>
+    </form>
+
+    <nav class="topbar-actions">
+      {% if user.is_authenticated %}
+        <a class="btn btn-primary btn-create" href="{% url 'web:create' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Create</span>
+        </a>
+        <a class="icon-btn has-badge {% if unread_notifications %}show-badge{% endif %}" href="{% url 'web:notifications' %}" aria-label="Notifications">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="badge-dot" data-count="{{ unread_notifications }}"></span>
+        </a>
+        <a class="avatar" href="{% url 'web:profile' user.username %}" aria-label="Profile">
+          {% if user.profile_picture %}<img src="{{ user.profile_picture.url }}" alt="">
+          {% else %}<span>{{ user.username|first|upper }}</span>{% endif %}
+        </a>
+      {% else %}
+        <a class="btn btn-ghost" href="{% url 'login' %}">Log in</a>
+        <a class="btn btn-primary" href="{% url 'signup' %}">Sign up</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <div class="shell">
+    <!-- ===== Sidebar (desktop) ===== -->
+    <aside class="sidebar">
+      <nav class="sidenav">
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+          Home
+        </a>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+          Explore
+        </a>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'category' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
+          Trending
+        </a>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          Saved
+        </a>
+      </nav>
+
+      <div class="sidebar-section">
+        <h4>Categories</h4>
+        <div class="chip-list">
+          {% for category in categories %}
+            <a class="chip" href="{% url 'web:category' category.slug %}">{{ category.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <footer class="sidebar-footer">Promptly — built for prompt creators</footer>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+      {% if messages %}
+        {% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- ===== Bottom nav (mobile) ===== -->
+  <nav class="bottom-nav">
+    <a class="bottom-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}" aria-label="Home">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+      <span>Home</span>
+    </a>
+    <a class="bottom-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" aria-label="Explore">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+      <span>Explore</span>
+    </a>
+    <a class="bottom-create" href="{% url 'web:create' %}" aria-label="Create">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+    <a class="bottom-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}" aria-label="Saved">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span>Saved</span>
+    </a>
+    <a class="bottom-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% if user.is_authenticated %}{% url 'web:profile' user.username %}{% else %}{% url 'login' %}{% endif %}" aria-label="Profile">
+      {% if user.is_authenticated %}<span class="bottom-avatar">{{ user.username|first|upper }}</span><span>Profile</span>
+      {% else %}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span>Log in</span>{% endif %}
+    </a>
+  </nav>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

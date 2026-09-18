@@ -1,0 +1,91 @@
+{% extends "web/base.html" %}
+{% block title %}{{ post.title }} · Promptly{% endblock %}
+
+{% block content %}
+<article class="post-detail" data-post-id="{{ post.id }}">
+  <div class="detail-media {% if post.image or post.video %}has-media{% else %}is-prompt{% endif %}">
+    {% if post.image %}
+      <img src="{{ post.image }}" alt="{{ post.title }}">
+    {% elif post.video %}
+      <video src="{{ post.video }}" controls playsinline></video>
+    {% else %}
+      <div class="prompt-preview lg">
+        <p>{{ post.prompt|default:post.title }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-body">
+    <header class="detail-header">
+      <div class="creator">
+        <a class="creator-avatar lg" href="{% url 'web:profile' post.author.username %}">{{ post.author.display_name|first|default:"?"|upper }}</a>
+        <div class="creator-info">
+          <a class="creator-name" href="{% url 'web:profile' post.author.username %}">
+            @{{ post.author.username }} {% if post.author.is_verified %}<span class="verified">✔</span>{% endif %}
+          </a>
+          <span class="muted">{{ post.created_at|date:"M j, Y" }} · {{ post.view_count }} views</span>
+        </div>
+      </div>
+      {% if user.is_authenticated and user.username != post.author.username %}
+        <button class="btn btn-outline follow-btn {% if post.author.is_following %}is-active{% endif %}"
+                data-action="follow" data-username="{{ post.author.username }}">
+          {% if post.author.is_following %}Following{% else %}Follow{% endif %}
+        </button>
+      {% endif %}
+    </header>
+
+    <h1 class="detail-title">{{ post.title }}</h1>
+    {% if post.description %}<p class="detail-desc">{{ post.description }}</p>{% endif %}
+
+    {% if post.prompt %}
+      <div class="prompt-box">
+        <div class="prompt-box-head">
+          <span>PROMPT</span>
+          <button class="btn btn-ghost btn-sm copy-btn" data-action="copy" data-post-id="{{ post.id }}">Copy</button>
+        </div>
+        <pre>{{ post.prompt }}</pre>
+      </div>
+    {% endif %}
+
+    {% if post.ai_model %}<p class="meta-line">🤖 Model: <strong>{{ post.ai_model }}</strong></p>{% endif %}
+    <p class="meta-line">
+      <a class="chip" href="{% url 'web:category' post.category.slug %}">{{ post.category.name }}</a>
+      {% for tag in post.tags %}<span class="chip">#{{ tag.name }}</span>{% endfor %}
+    </p>
+
+    <div class="detail-actions">
+      <button class="stat-btn like-btn {% if post.is_liked %}is-active{% endif %}" data-action="like" data-post-id="{{ post.id }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.5-1.6 2-3.3 2-5a5 5 0 0 0-9.6-1.8A5 5 0 0 0 3 9c0 1.7.5 3.4 2 5l7 7z"/></svg>
+        <span data-count="like">{{ post.like_count }}</span>
+      </button>
+      <button class="stat-btn save-btn {% if post.is_saved %}is-active{% endif %}" data-action="save" data-post-id="{{ post.id }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span data-count="save">{{ post.save_count }}</span>
+      </button>
+      <span class="stat-pill">{{ post.copy_count }} copies</span>
+      <span class="stat-pill">{{ post.comment_count }} comments</span>
+    </div>
+
+    {% if post.video or post.image %}{% else %}
+      {% if post.prompt %}
+        <button class="btn btn-primary btn-copy-cta copy-btn" data-action="copy" data-post-id="{{ post.id }}">
+          Copy prompt
+        </button>
+      {% endif %}
+    {% endif %}
+
+    <section class="comments" id="comments">
+      <h2 class="section-title">Comments</h2>
+      {% if user.is_authenticated %}
+        <form class="comment-form" data-post-id="{{ post.id }}">
+          <textarea name="content" rows="3" maxlength="2000" placeholder="Share your thoughts…" required></textarea>
+          <button class="btn btn-primary btn-sm" type="submit">Comment</button>
+        </form>
+      {% else %}
+        <p class="muted"><a href="{% url 'login' %}">Log in</a> to join the conversation.</p>
+      {% endif %}
+      <div class="comment-list" data-endpoint="{% url 'interactions:list-comments' post.id %}" data-loaded="false"></div>
+    </section>
+  </div>
+</article>
+{% endblock %}

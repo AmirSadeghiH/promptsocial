@@ -9,7 +9,22 @@ from django.utils import timezone
 
 from interactions.models import Follow, PostCopy, PostView
 from posts.models import Category, Post, Tag
-from posts.services import get_following_feed, get_latest_feed, get_trending_feed
+from posts.services import (
+    get_following_feed,
+    get_latest_feed,
+    get_trending_feed,
+    search_posts,
+)
+
+
+def _create_post(author, category, title="A prompt", post_type=Post.PostType.PROMPT, **kwargs):
+    return Post.objects.create(
+        author=author,
+        category=category,
+        post_type=post_type,
+        title=title,
+        **kwargs,
+    )
 
 
 class FeedServiceTests(TestCase):
@@ -20,18 +35,8 @@ class FeedServiceTests(TestCase):
             password="test-password",
         )
         category = Category.objects.create(name="Feed category", slug="feed-category")
-        self.older_post = Post.objects.create(
-            author=self.user,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Older prompt",
-        )
-        self.newer_post = Post.objects.create(
-            author=self.user,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Newer prompt",
-        )
+        self.older_post = _create_post(self.user, category, "Older prompt")
+        self.newer_post = _create_post(self.user, category, "Newer prompt")
         now = timezone.now()
         Post.objects.filter(pk=self.older_post.pk).update(created_at=now - timedelta(hours=2))
         Post.objects.filter(pk=self.newer_post.pk).update(created_at=now - timedelta(hours=1))
@@ -52,30 +57,10 @@ class FeedServiceTests(TestCase):
             password="test-password",
         )
         Follow.objects.create(follower=self.viewer, following=followed_author)
-        self.followed_post = Post.objects.create(
-            author=followed_author,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Followed author prompt",
-        )
-        self.unfollowed_post = Post.objects.create(
-            author=unfollowed_author,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Unfollowed author prompt",
-        )
-        self.copied_post = Post.objects.create(
-            author=followed_author,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Copied prompt",
-        )
-        self.viewed_post = Post.objects.create(
-            author=unfollowed_author,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Viewed prompt",
-        )
+        self.followed_post = _create_post(followed_author, category, "Followed author prompt")
+        self.unfollowed_post = _create_post(unfollowed_author, category, "Unfollowed author prompt")
+        self.copied_post = _create_post(followed_author, category, "Copied prompt")
+        self.viewed_post = _create_post(unfollowed_author, category, "Viewed prompt")
         PostCopy.objects.create(post=self.copied_post, user=self.viewer)
         for _ in range(5):
             PostView.objects.create(post=self.viewed_post, user=self.viewer)
@@ -117,12 +102,7 @@ class FeedServiceTests(TestCase):
         self.assertEqual(page["results"][0]["id"], self.copied_post.id)
 
     def test_trending_excludes_posts_older_than_thirty_days(self):
-        old_post = Post.objects.create(
-            author=self.user,
-            category=self.older_post.category,
-            post_type=Post.PostType.PROMPT,
-            title="Old but popular prompt",
-        )
+        old_post = _create_post(self.user, self.older_post.category, "Old but popular prompt")
         Post.objects.filter(pk=old_post.pk).update(
             created_at=timezone.now() - timedelta(days=31),
         )
@@ -142,12 +122,7 @@ class FeedApiTests(TestCase):
             password="test-password",
         )
         category = Category.objects.create(name="API feeds", slug="api-feeds")
-        self.post = Post.objects.create(
-            author=self.user,
-            category=category,
-            post_type=Post.PostType.PROMPT,
-            title="Feed API prompt",
-        )
+        self.post = _create_post(self.user, category, "Feed API prompt")
 
     def test_latest_endpoint_returns_json_page(self):
         response = self.client.get(reverse("posts:feed-latest"), {"page_size": 1})
@@ -200,12 +175,7 @@ class FeedQueryTests(TestCase):
             slug="efficient",
         )
         for index in range(5):
-            post = Post.objects.create(
-                author=user,
-                category=category,
-                post_type=Post.PostType.PROMPT,
-                title=f"Query prompt {index}",
-            )
+            post = _create_post(user, category, f"Query prompt {index}")
             post.tags.add(tag)
 
     def test_latest_feed_serializes_five_tagged_posts_in_two_queries(self):
@@ -214,3 +184,184 @@ class FeedQueryTests(TestCase):
 
         self.assertEqual(len(page["results"]), 5)
         self.assertEqual(len(queries), 2)
+
+
+class SearchServiceTests(TestCase):
+    def setUp(self):
+        self.author = get_user_model().objects.create_user(
+            username="picasso",
+            email="picasso@example.com",
+            password="test-password",
+        )
+        self.writing = Category.objects.create(name="Writing", slug="writing")
+        self.art = Category.objects.create(name="Art", slug="art")
+        self.tag = Tag.objects.create(name="midjourney", slug="midjourney")
+        self.prompt_post = _create_post(
+            self.author,
+            self.writing,
+            "Cyberpunk storyteller",
+            prompt="Write a cyberpunk story about memory.",
+            ai_model="GPT-5",
+        )
+        self.image_post = _create_post(
+            self.author,
+            self.art,
+            "Neon city render",
+            post_type=Post.PostType.IMAGE,
+            prompt="Neon city at dusk, ultra detailed",
+            ai_model="Midjourney",
+        )
+        self.image_post.tags.add(self.tag)
+
+    def test_matches_title_prompt_description_and_ai_model(self):
+        self.assertEqual(
+            {p["id"] for p in search_posts("cyberpunk")["results"]},
+            {self.prompt_post.id},
+        )
+        self.assertEqual(
+            {p["id"] for p in search_posts("midjourney")["results"]},
+            {self.image_post.id},
+        )
+
+    def test_matches_creator_username(self):
+        page = search_posts("picasso")
+
+        self.assertEqual(
+            {p["id"] for p in page["results"]},
+            {self.prompt_post.id, self.image_post.id},
+        )
+
+    def test_filters_by_post_type_and_category(self):
+        page = search_posts("", post_type=Post.PostType.IMAGE, category_slug="art")
+
+        self.assertEqual([p["id"] for p in page["results"]], [self.image_post.id])
+
+    def test_filter_by_tag_slug(self):
+        page = search_posts("", tag_slug="midjourney")
+
+        self.assertEqual([p["id"] for p in page["results"]], [self.image_post.id])
+
+    def test_search_api_returns_results(self):
+        response = self.client.get(reverse("posts:search"), {"q": "neon"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([p["id"] for p in response.json()["results"]], [self.image_post.id])
+
+    def test_categories_and_tags_endpoints(self):
+        categories = self.client.get(reverse("posts:categories")).json()["results"]
+        self.assertEqual(
+            {c["slug"] for c in categories},
+            {"writing", "art"},
+        )
+
+        tags = self.client.get(reverse("posts:tags")).json()["results"]
+        self.assertEqual([t["slug"] for t in tags], ["midjourney"])
+
+        category_page = self.client.get(reverse("posts:category-posts", args=["art"])).json()
+        self.assertEqual([p["id"] for p in category_page["results"]], [self.image_post.id])
+
+
+class PostCrudApiTests(TestCase):
+    def setUp(self):
+        self.author = get_user_model().objects.create_user(
+            username="crud-author",
+            email="crud-author@example.com",
+            password="test-password",
+        )
+        self.other = get_user_model().objects.create_user(
+            username="crud-other",
+            email="crud-other@example.com",
+            password="test-password",
+        )
+        self.category = Category.objects.create(name="CRUD", slug="crud")
+        self.post = _create_post(self.author, self.category, "Original title")
+
+    def _create_payload(self, **overrides):
+        payload = {
+            "post_type": "prompt",
+            "title": "Brand new prompt",
+            "description": "desc",
+            "prompt": "Do something amazing",
+            "ai_model": "GPT-5",
+            "category_id": self.category.id,
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_anonymous_user_cannot_create(self):
+        response = self.client.post(
+            reverse("posts:post-create"),
+            self._create_payload(),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 302)  # login redirect
+
+    def test_authenticated_user_can_create_a_post(self):
+        self.client.force_login(self.author)
+
+        response = self.client.post(
+            reverse("posts:post-create"),
+            self._create_payload(tag_ids=[]),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["post"]["title"], "Brand new prompt")
+        self.assertTrue(Post.objects.filter(title="Brand new prompt").exists())
+
+    def test_create_rejects_invalid_payload(self):
+        self.client.force_login(self.author)
+
+        response = self.client.post(
+            reverse("posts:post-create"),
+            {"title": ""},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("errors", response.json())
+
+    def test_detail_returns_serialized_post(self):
+        response = self.client.get(reverse("posts:post-detail", args=[self.post.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["post"]["id"], self.post.pk)
+
+    def test_only_owner_can_update(self):
+        self.client.force_login(self.other)
+
+        response = self.client.patch(
+            reverse("posts:post-update", args=[self.post.pk]),
+            {"title": "Hacked"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_update(self):
+        self.client.force_login(self.author)
+
+        response = self.client.patch(
+            reverse("posts:post-update", args=[self.post.pk]),
+            {"title": "Updated title"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.post.refresh_from_db()
+        self.assertEqual(self.post.title, "Updated title")
+
+    def test_only_owner_can_delete(self):
+        self.client.force_login(self.other)
+
+        response = self.client.delete(reverse("posts:post-delete", args=[self.post.pk]))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_delete(self):
+        self.client.force_login(self.author)
+
+        response = self.client.delete(reverse("posts:post-delete", args=[self.post.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Post.objects.filter(pk=self.post.pk).exists())

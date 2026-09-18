@@ -29,7 +29,29 @@ def post_list_queryset():
     )
 
 
-def serialize_post(post):
+def _author_payload(post, viewer=None):
+    author = post.author
+    data = {
+        "id": author.id,
+        "username": author.username,
+        "display_name": author.display_name or author.username,
+        "is_verified": author.is_verified,
+    }
+    if getattr(post, "author_followers", None) is not None:
+        data["follower_count"] = post.author_followers
+    if viewer is not None and viewer.is_authenticated:
+        data["is_following"] = Follow.objects.filter(
+            follower=viewer, following=author
+        ).exists()
+    return data
+
+
+def serialize_post(post, *, viewer=None):
+    def _flag(manager_name):
+        if not viewer or not viewer.is_authenticated:
+            return False
+        return getattr(post, manager_name).filter(user=viewer).exists()
+
     return {
         "id": post.id,
         "post_type": post.post_type,
@@ -37,14 +59,12 @@ def serialize_post(post):
         "description": post.description,
         "prompt": post.prompt,
         "ai_model": post.ai_model,
+        "image": post.image.url if post.image else None,
+        "video": post.video.url if post.video else None,
+        "audio": post.audio.url if post.audio else None,
         "created_at": post.created_at.isoformat(),
         "updated_at": post.updated_at.isoformat(),
-        "author": {
-            "id": post.author_id,
-            "username": post.author.username,
-            "display_name": post.author.display_name,
-            "is_verified": post.author.is_verified,
-        },
+        "author": _author_payload(post, viewer),
         "category": {
             "id": post.category_id,
             "name": post.category.name,
@@ -59,6 +79,8 @@ def serialize_post(post):
         "comment_count": post.comment_count,
         "view_count": post.view_count,
         "copy_count": post.copy_count,
+        "is_liked": _flag("likes"),
+        "is_saved": _flag("saves"),
     }
 
 
@@ -84,7 +106,7 @@ def _decode_cursor(cursor):
     return created_at, post_id
 
 
-def _paginate_chronological(queryset, *, cursor, page_size):
+def _paginate_chronological(queryset, *, cursor, page_size, viewer=None):
     queryset = queryset.order_by("-created_at", "-id")
     if cursor:
         created_at, post_id = _decode_cursor(cursor)
@@ -102,7 +124,7 @@ def _paginate_chronological(queryset, *, cursor, page_size):
         next_cursor = _encode_cursor(last_post.created_at, last_post.id)
 
     return {
-        "results": [serialize_post(post) for post in page_posts],
+        "results": [serialize_post(post, viewer=viewer) for post in page_posts],
         "next_cursor": next_cursor,
     }
 
@@ -140,7 +162,7 @@ def _decode_trending_cursor(cursor):
     return float(score), created_at, post_id
 
 
-def _paginate_trending(queryset, *, cursor, page_size):
+def _paginate_trending(queryset, *, cursor, page_size, viewer=None):
     queryset = queryset.order_by("-trending_score", "-created_at", "-id")
     if cursor:
         score, created_at, post_id = _decode_trending_cursor(cursor)
@@ -163,29 +185,31 @@ def _paginate_trending(queryset, *, cursor, page_size):
         )
 
     return {
-        "results": [serialize_post(post) for post in page_posts],
+        "results": [serialize_post(post, viewer=viewer) for post in page_posts],
         "next_cursor": next_cursor,
     }
 
 
-def get_latest_feed(*, cursor=None, page_size=20):
+def get_latest_feed(*, cursor=None, page_size=20, viewer=None):
     return _paginate_chronological(
         post_list_queryset(),
         cursor=cursor,
         page_size=page_size,
+        viewer=viewer,
     )
 
 
-def get_following_feed(user, *, cursor=None, page_size=20):
+def get_following_feed(user, *, cursor=None, page_size=20, viewer=None):
     followed_user_ids = Follow.objects.filter(follower=user).values("following_id")
     return _paginate_chronological(
         post_list_queryset().filter(author_id__in=followed_user_ids),
         cursor=cursor,
         page_size=page_size,
+        viewer=viewer or user,
     )
 
 
-def get_trending_feed(*, cursor=None, page_size=20):
+def get_trending_feed(*, cursor=None, page_size=20, viewer=None):
     now = timezone.now()
     age_factor = Case(
         When(created_at__gte=now - timedelta(days=1), then=Value(1.0)),
@@ -211,13 +235,42 @@ def get_trending_feed(*, cursor=None, page_size=20):
             ),
         )
     )
-    return _paginate_trending(queryset, cursor=cursor, page_size=page_size)
+    return _paginate_trending(queryset, cursor=cursor, page_size=page_size, viewer=viewer)
 
 
-def get_explore_data():
+def search_posts(query, *, post_type=None, category_slug=None, tag_slug=None,
+                 ai_model=None, cursor=None, page_size=20, viewer=None):
+    """Search posts by title, prompt, description, tags, category, AI model, creator."""
+    queryset = post_list_queryset()
+    if query:
+        queryset = queryset.filter(
+            Q(title__icontains=query)
+            | Q(prompt__icontains=query)
+            | Q(description__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(category__name__icontains=query)
+            | Q(ai_model__icontains=query)
+            | Q(author__username__icontains=query)
+            | Q(author__display_name__icontains=query)
+        ).distinct()
+    if post_type:
+        queryset = queryset.filter(post_type=post_type)
+    if category_slug:
+        queryset = queryset.filter(category__slug=category_slug)
+    if tag_slug:
+        queryset = queryset.filter(tags__slug=tag_slug)
+    if ai_model:
+        queryset = queryset.filter(ai_model__icontains=ai_model)
+
+    return _paginate_chronological(
+        queryset, cursor=cursor, page_size=page_size, viewer=viewer,
+    )
+
+
+def get_explore_data(viewer=None):
     return {
-        "latest": get_latest_feed(page_size=6)["results"],
-        "trending": get_trending_feed(page_size=6)["results"],
+        "latest": get_latest_feed(page_size=6, viewer=viewer)["results"],
+        "trending": get_trending_feed(page_size=6, viewer=viewer)["results"],
         "popular_categories": list(
             Category.objects.annotate(post_count=Count("posts"))
             .filter(post_count__gt=0)

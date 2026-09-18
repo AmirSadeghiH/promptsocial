@@ -1,7 +1,17 @@
-from django.http import JsonResponse
+import json
 
-from interactions.models import PostCopy, PostView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Count
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
+
+from interactions.models import Comment, Follow, Like, PostCopy, PostView, Save
 from posts.models import Post
+from posts.services import post_list_queryset, serialize_post
 
 
 def _get_post_or_error(post_id):
@@ -28,15 +38,157 @@ def record_view(request, post_id):
     return JsonResponse({"post_id": post.pk, "event": "view"}, status=201)
 
 
+@login_required
+@require_POST
 def record_copy(request, post_id):
-    if request.method != "POST":
-        return _method_not_allowed()
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Authentication required."}, status=401)
-
     post, error_response = _get_post_or_error(post_id)
     if error_response:
         return error_response
 
     PostCopy.objects.create(post=post, user=request.user)
     return JsonResponse({"post_id": post.pk, "event": "copy"}, status=201)
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def toggle_like(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        like.delete()
+        return JsonResponse(
+            {"post_id": post.pk, "liked": False, "like_count": post.likes.count()},
+            status=200,
+        )
+    return JsonResponse(
+        {"post_id": post.pk, "liked": True, "like_count": post.likes.count()},
+        status=201,
+    )
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def toggle_save(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+
+    save, created = Save.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        save.delete()
+        return JsonResponse(
+            {"post_id": post.pk, "saved": False, "save_count": post.saves.count()},
+            status=200,
+        )
+    return JsonResponse(
+        {"post_id": post.pk, "saved": True, "save_count": post.saves.count()},
+        status=201,
+    )
+
+
+@login_required
+@require_POST
+def create_comment(request, post_id):
+    post, error_response = _get_post_or_error(post_id)
+    if error_response:
+        return error_response
+
+    try:
+        data = json.loads(request.body.decode("utf-8")) if request.body else {}
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    content = str(data.get("content", "")).strip()
+    if not content:
+        return JsonResponse({"errors": {"content": "Comment cannot be empty."}}, status=400)
+    if len(content) > 2000:
+        return JsonResponse(
+            {"errors": {"content": "Comment must be at most 2000 characters."}},
+            status=400,
+        )
+
+    comment = Comment.objects.create(post=post, user=request.user, content=content)
+    return JsonResponse(
+        {
+            "id": comment.pk,
+            "content": comment.content,
+            "created_at": comment.created_at.isoformat(),
+            "user": {
+                "id": request.user.pk,
+                "username": request.user.username,
+                "display_name": request.user.display_name or request.user.username,
+            },
+            "comment_count": post.comments.count(),
+        },
+        status=201,
+    )
+
+
+@login_required
+def delete_comment(request, comment_id):
+    if request.method != "DELETE":
+        return _method_not_allowed()
+
+    comment = get_object_or_404(Comment.objects.select_related("post"), pk=comment_id)
+    if comment.user_id != request.user.id and comment.post.author_id != request.user.id:
+        return JsonResponse(
+            {"error": "You can only delete your own comments."}, status=403
+        )
+    post_id = comment.post_id
+    comment.delete()
+    return JsonResponse(
+        {"deleted": True, "comment_count": Comment.objects.filter(post_id=post_id).count()}
+    )
+
+
+def list_comments(request, post_id):
+    if request.method != "GET":
+        return _method_not_allowed()
+
+    post, error_response = _get_post_or_error(post_id)
+    if error_response:
+        return error_response
+
+    comments = (
+        post.comments.select_related("user").order_by("created_at")
+    )
+    return JsonResponse(
+        {
+            "results": [
+                {
+                    "id": comment.pk,
+                    "content": comment.content,
+                    "created_at": comment.created_at.isoformat(),
+                    "user": {
+                        "id": comment.user_id,
+                        "username": comment.user.username,
+                        "display_name": comment.user.display_name or comment.user.username,
+                    },
+                }
+                for comment in comments
+            ]
+        }
+    )
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def toggle_follow(request, username):
+    target = get_object_or_404(
+        get_user_model().objects.exclude(pk=request.user.pk),
+        username=username,
+    )
+
+    follow, created = Follow.objects.get_or_create(follower=request.user, following=target)
+    if not created:
+        follow.delete()
+        return JsonResponse(
+            {"following": False, "follower_count": Follow.objects.filter(following=target).count()},
+            status=200,
+        )
+    return JsonResponse(
+        {"following": True, "follower_count": Follow.objects.filter(following=target).count()},
+        status=201,
+    )
