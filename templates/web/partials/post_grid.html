@@ -11,12 +11,12 @@ Expects: posts (list of serialized post dicts)
           <img src="{{ post.image }}" alt="{{ post.title }}" loading="lazy">
         {% elif post.video %}
           <video src="{{ post.video }}" muted preload="metadata" playsinline></video>
-          <span class="media-badge">▶ Video</span>
+          <span class="media-badge">▶ {{ i18n.video }}</span>
         {% else %}
           <div class="prompt-preview">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 12h8"/></svg>
             <p>{{ post.prompt|default:post.title|truncatechars:180 }}</p>
-            <span class="media-badge">PROMPT</span>
+            <span class="media-badge">{{ i18n.prompt }}</span>
           </div>
         {% endif %}
       </a>
@@ -27,7 +27,7 @@ Expects: posts (list of serialized post dicts)
           <a class="creator" href="{% url 'web:profile' post.author.username %}">
             <span class="creator-avatar">{{ post.author.display_name|first|default:"?"|upper }}</span>
             <span class="creator-name">@{{ post.author.username }}</span>
-            {% if post.author.is_verified %}<span class="verified" title="Verified">✔</span>{% endif %}
+            {% if post.author.is_verified %}<span class="verified" title="{{ i18n.verified }}">✔</span>{% endif %}
           </a>
           <div class="stats">
             <button class="stat-btn like-btn {% if post.is_liked %}is-active{% endif %}"
@@ -46,8 +46,8 @@ Expects: posts (list of serialized post dicts)
     </article>
   {% empty %}
     <div class="empty-state">
-      <p>Nothing here yet.</p>
-      <a class="btn btn-primary" href="{% url 'web:create' %}">Share your first prompt</a>
+      <p data-i18n="nothing_here">{{ i18n.nothing_here }}</p>
+      <a class="btn btn-primary" href="{% url 'web:create' %}" data-i18n="share_first_prompt">{{ i18n.share_first_prompt }}</a>
     </div>
   {% endfor %}
 </div>

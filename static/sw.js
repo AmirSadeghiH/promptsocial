@@ -1,5 +1,5 @@
 /* Promptly service worker — offline shell + smart caching */
-const VERSION = "promptly-v1";
+const VERSION = "promptly-v2-i18n-theme";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -7,6 +7,8 @@ const IMAGE_CACHE = `${VERSION}-images`;
 const PRECACHE_URLS = [
   "/static/css/app.css",
   "/static/js/app.js",
+  "/static/js/i18n.js",
+  "/static/js/theme.js",
   "/static/icons/icon-192.png",
   "/static/manifest.webmanifest",
   "/offline/",

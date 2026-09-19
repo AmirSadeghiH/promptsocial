@@ -1,10 +1,10 @@
 {% extends "web/base.html" %}
-{% block title %}Notifications · Promptly{% endblock %}
+{% block title %}{{ i18n.notifications }} · Promptly{% endblock %}
 
 {% block content %}
 <div class="page-head">
-  <h1 class="page-title">Notifications</h1>
-  <button class="btn btn-ghost btn-sm" id="mark-all-read">Mark all as read</button>
+  <h1 class="page-title" data-i18n="notifications">{{ i18n.notifications }}</h1>
+  <button class="btn btn-ghost btn-sm" id="mark-all-read" data-i18n="mark_all_read">{{ i18n.mark_all_read }}</button>
 </div>
 
 <ul class="notification-list" data-unread-count="{{ unread_notifications }}">
@@ -16,14 +16,17 @@
       <div class="notification-body">
         <p>
           <a class="creator-name" href="{% url 'web:profile' n.actor.username %}">@{{ n.actor.username }}</a>
-          {% if n.type == "like" %}liked your post{% elif n.type == "save" %}saved your post{% elif n.type == "comment" %}commented on your post{% else %}started following you{% endif %}
+          {% if n.type == "like" %}<span data-i18n="liked_your_post">{{ i18n.liked_your_post }}</span>
+          {% elif n.type == "save" %}<span data-i18n="saved_your_post">{{ i18n.saved_your_post }}</span>
+          {% elif n.type == "comment" %}<span data-i18n="commented_on_your_post">{{ i18n.commented_on_your_post }}</span>
+          {% else %}<span data-i18n="started_following_you">{{ i18n.started_following_you }}</span>{% endif %}
           {% if n.post %}<a href="{% url 'web:post-detail' n.post.id %}">“{{ n.post.title }}”</a>{% endif %}
         </p>
         <span class="muted">{{ n.created_at|date:"M j, Y H:i" }}</span>
       </div>
     </li>
   {% empty %}
-    <li class="empty-state"><p>No notifications yet.</p></li>
+    <li class="empty-state"><p data-i18n="no_notifications">{{ i18n.no_notifications }}</p></li>
   {% endfor %}
 </ul>
 {% endblock %}

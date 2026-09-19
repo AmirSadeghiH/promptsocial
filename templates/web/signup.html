@@ -1,24 +1,24 @@
 {% extends "web/base.html" %}
-{% block title %}Sign up · Promptly{% endblock %}
+{% block title %}{{ i18n.signup }} · Promptly{% endblock %}
 
 {% block content %}
 <div class="auth-card">
-  <h1>Create your account</h1>
-  <p class="muted">Join the community of prompt creators.</p>
+  <h1 data-i18n="create_account">{{ i18n.create_account }}</h1>
+  <p class="muted" data-i18n="signup_tagline">{{ i18n.signup_tagline }}</p>
   {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
   <form method="post" class="auth-form">
     {% csrf_token %}
-    <label class="field"><span>Username</span>
+    <label class="field"><span data-i18n="username">{{ i18n.username }}</span>
       <input type="text" name="username" required minlength="3" maxlength="150" autocomplete="username">
     </label>
-    <label class="field"><span>Email</span>
+    <label class="field"><span data-i18n="email">{{ i18n.email }}</span>
       <input type="email" name="email" required autocomplete="email">
     </label>
-    <label class="field"><span>Password <small>(min 8 chars)</small></span>
+    <label class="field"><span data-i18n="password_min">{{ i18n.password_min }} <small data-i18n="password_hint">{{ i18n.password_hint }}</small></span>
       <input type="password" name="password" required minlength="8" autocomplete="new-password">
     </label>
-    <button class="btn btn-primary btn-lg" type="submit">Sign up</button>
+    <button class="btn btn-primary btn-lg" type="submit" data-i18n="signup">{{ i18n.signup }}</button>
   </form>
-  <p class="muted">Already have an account? <a href="{% url 'login' %}">Log in</a></p>
+  <p class="muted"><span data-i18n="have_account">{{ i18n.have_account }}</span> <a href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a></p>
 </div>
 {% endblock %}

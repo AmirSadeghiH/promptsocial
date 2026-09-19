@@ -1,14 +1,17 @@
 {% extends "web/base.html" %}
-{% block title %}Search · Promptly{% endblock %}
+{% load web_extras %}
+{% block title %}{{ i18n.search_title }} · Promptly{% endblock %}
 
 {% block content %}
-<h1 class="page-title">{% if query %}Results for “{{ query }}”{% else %}Search{% endif %}</h1>
+<h1 class="page-title">
+  {% if query %}{{ i18n.results_for|fmt:query }}{% else %}{{ i18n.search_title }}{% endif %}
+</h1>
 
 {% if query %}
   {% with posts=results %}{% include "web/partials/post_grid.html" %}{% endwith %}
 {% else %}
   <div class="empty-state">
-    <p>Type something in the search bar above — titles, prompts, tags, AI models or creators.</p>
+    <p data-i18n="search_hint">{{ i18n.search_hint }}</p>
   </div>
 {% endif %}
 {% endblock %}

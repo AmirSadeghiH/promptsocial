@@ -1,7 +1,7 @@
 {% extends "web/base.html" %}
-{% block title %}Saved · Promptly{% endblock %}
+{% block title %}{{ i18n.saved }} · Promptly{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Saved</h1>
+<h1 class="page-title" data-i18n="saved">{{ i18n.saved }}</h1>
 {% with posts=posts %}{% include "web/partials/post_grid.html" %}{% endwith %}
 {% endblock %}

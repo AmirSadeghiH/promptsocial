@@ -1,12 +1,12 @@
 {% extends "web/base.html" %}
-{% block title %}{{ feed_tab|default:"Home" }} · Promptly{% endblock %}
+{% block title %}{{ feed_tab|default:i18n.home }} · Promptly{% endblock %}
 
 {% block content %}
 <div class="feed-tabs">
-  <a class="tab {% if feed_tab == 'foryou' %}active{% endif %}" href="{% url 'web:home' %}">For You</a>
-  <a class="tab {% if feed_tab == 'latest' %}active{% endif %}" href="{% url 'web:feed' 'latest' %}">Latest</a>
-  <a class="tab {% if feed_tab == 'following' %}active{% endif %}" href="{% url 'web:feed' 'following' %}">Following</a>
-  <a class="tab {% if feed_tab == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">Trending</a>
+  <a class="tab {% if feed_tab == 'foryou' %}active{% endif %}" href="{% url 'web:home' %}" data-i18n="for_you">{{ i18n.for_you }}</a>
+  <a class="tab {% if feed_tab == 'latest' %}active{% endif %}" href="{% url 'web:feed' 'latest' %}" data-i18n="latest">{{ i18n.latest }}</a>
+  <a class="tab {% if feed_tab == 'following' %}active{% endif %}" href="{% url 'web:feed' 'following' %}" data-i18n="following">{{ i18n.following }}</a>
+  <a class="tab {% if feed_tab == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}" data-i18n="trending">{{ i18n.trending }}</a>
 </div>
 
 {% include "web/partials/post_grid.html" %}
