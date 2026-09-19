@@ -23,13 +23,13 @@
           <a class="creator-name" href="{% url 'web:profile' post.author.username %}">
             @{{ post.author.username }} {% if post.author.is_verified %}<span class="verified">✔</span>{% endif %}
           </a>
-          <span class="muted">{{ post.created_at|date:"M j, Y" }} · {{ post.view_count }} views</span>
+          <span class="muted">{{ post.created_at|date:"M j, Y" }} · {{ post.view_count }} {{ i18n.views }}</span>
         </div>
       </div>
       {% if user.is_authenticated and user.username != post.author.username %}
         <button class="btn btn-outline follow-btn {% if post.author.is_following %}is-active{% endif %}"
                 data-action="follow" data-username="{{ post.author.username }}">
-          {% if post.author.is_following %}Following{% else %}Follow{% endif %}
+          {% if post.author.is_following %}{{ i18n.following_btn }}{% else %}{{ i18n.follow }}{% endif %}
         </button>
       {% endif %}
     </header>
@@ -40,14 +40,14 @@
     {% if post.prompt %}
       <div class="prompt-box">
         <div class="prompt-box-head">
-          <span>PROMPT</span>
-          <button class="btn btn-ghost btn-sm copy-btn" data-action="copy" data-post-id="{{ post.id }}">Copy</button>
+          <span data-i18n="prompt">{{ i18n.prompt }}</span>
+          <button class="btn btn-ghost btn-sm copy-btn" data-action="copy" data-post-id="{{ post.id }}">{{ i18n.copy }}</button>
         </div>
         <pre>{{ post.prompt }}</pre>
       </div>
     {% endif %}
 
-    {% if post.ai_model %}<p class="meta-line">🤖 Model: <strong>{{ post.ai_model }}</strong></p>{% endif %}
+    {% if post.ai_model %}<p class="meta-line">🤖 {{ i18n.model }} <strong dir="auto">{{ post.ai_model }}</strong></p>{% endif %}
     <p class="meta-line">
       <a class="chip" href="{% url 'web:category' post.category.slug %}">{{ post.category.name }}</a>
       {% for tag in post.tags %}<span class="chip">#{{ tag.name }}</span>{% endfor %}
@@ -62,27 +62,27 @@
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         <span data-count="save">{{ post.save_count }}</span>
       </button>
-      <span class="stat-pill">{{ post.copy_count }} copies</span>
-      <span class="stat-pill">{{ post.comment_count }} comments</span>
+      <span class="stat-pill">{{ post.copy_count }} {{ i18n.copies }}</span>
+      <span class="stat-pill">{{ post.comment_count }} {{ i18n.comments }}</span>
     </div>
 
     {% if post.video or post.image %}{% else %}
       {% if post.prompt %}
         <button class="btn btn-primary btn-copy-cta copy-btn" data-action="copy" data-post-id="{{ post.id }}">
-          Copy prompt
+          {{ i18n.copy }} {{ i18n.the_prompt }}
         </button>
       {% endif %}
     {% endif %}
 
     <section class="comments" id="comments">
-      <h2 class="section-title">Comments</h2>
+      <h2 class="section-title" data-i18n="comments_title">{{ i18n.comments_title }}</h2>
       {% if user.is_authenticated %}
         <form class="comment-form" data-post-id="{{ post.id }}">
-          <textarea name="content" rows="3" maxlength="2000" placeholder="Share your thoughts…" required></textarea>
-          <button class="btn btn-primary btn-sm" type="submit">Comment</button>
+          <textarea name="content" rows="3" maxlength="2000" placeholder="{{ i18n.comment_placeholder }}" required></textarea>
+          <button class="btn btn-primary btn-sm" type="submit">{{ i18n.comment_btn }}</button>
         </form>
       {% else %}
-        <p class="muted"><a href="{% url 'login' %}">Log in</a> to join the conversation.</p>
+        <p class="muted"><a href="{% url 'login' %}">{{ i18n.login }}</a> {{ i18n.login_to_join }}</p>
       {% endif %}
       <div class="comment-list" data-endpoint="{% url 'interactions:list-comments' post.id %}" data-loaded="false"></div>
     </section>

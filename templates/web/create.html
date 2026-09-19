@@ -1,29 +1,29 @@
 {% extends "web/base.html" %}
-{% block title %}Create · Promptly{% endblock %}
+{% block title %}{{ i18n.share_a_prompt }} · Promptly{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Share a prompt</h1>
+<h1 class="page-title" data-i18n="share_a_prompt">{{ i18n.share_a_prompt }}</h1>
 
 <form class="create-form" id="create-form" enctype="multipart/form-data">
   <label class="field">
-    <span>Title</span>
-    <input type="text" name="title" maxlength="200" required placeholder="e.g. Cinematic portrait generator">
+    <span data-i18n="title">{{ i18n.title }}</span>
+    <input type="text" name="title" maxlength="200" required placeholder="{{ i18n.title_placeholder }}">
   </label>
 
   <label class="field">
-    <span>Type</span>
+    <span data-i18n="type">{{ i18n.type }}</span>
     <select name="post_type" id="id_post_type">
-      <option value="prompt">Prompt</option>
-      <option value="image">Image</option>
-      <option value="video">Video</option>
-      <option value="audio">Audio</option>
+      <option value="prompt" data-i18n="prompt_type">{{ i18n.prompt_type }}</option>
+      <option value="image" data-i18n="image">{{ i18n.image }}</option>
+      <option value="video" data-i18n="video">{{ i18n.video }}</option>
+      <option value="audio" data-i18n="audio">{{ i18n.audio }}</option>
     </select>
   </label>
 
   <label class="field">
-    <span>Category</span>
+    <span data-i18n="category">{{ i18n.category }}</span>
     <select name="category_id" required>
-      <option value="" disabled selected>Choose a category…</option>
+      <option value="" disabled selected data-i18n="choose_category">{{ i18n.choose_category }}</option>
       {% for category in category_options %}
         <option value="{{ category.id }}">{{ category.name }}</option>
       {% endfor %}
@@ -31,37 +31,37 @@
   </label>
 
   <label class="field">
-    <span>AI model <small>(optional)</small></span>
-    <input type="text" name="ai_model" maxlength="100" placeholder="e.g. GPT-5, Midjourney, Sora">
+    <span data-i18n="ai_model">{{ i18n.ai_model }} <small data-i18n="optional">{{ i18n.optional }}</small></span>
+    <input type="text" name="ai_model" maxlength="100" placeholder="{{ i18n.ai_model_placeholder }}">
   </label>
 
   <label class="field">
-    <span>The prompt</span>
-    <textarea name="prompt" rows="6" placeholder="Paste the prompt you used…"></textarea>
+    <span data-i18n="the_prompt">{{ i18n.the_prompt }}</span>
+    <textarea name="prompt" rows="6" placeholder="{{ i18n.prompt_placeholder }}"></textarea>
   </label>
 
   <label class="field">
-    <span>Description <small>(optional)</small></span>
-    <textarea name="description" rows="3" placeholder="What makes this prompt special?"></textarea>
+    <span data-i18n="description">{{ i18n.description }} <small data-i18n="optional">{{ i18n.optional }}</small></span>
+    <textarea name="description" rows="3" placeholder="{{ i18n.description_placeholder }}"></textarea>
   </label>
 
   <div id="media-upload-fields">
     <label class="field" id="image-field">
-      <span>Image</span>
+      <span data-i18n="image">{{ i18n.image }}</span>
       <input type="file" name="image" accept="image/*">
     </label>
     <label class="field" id="video-field" hidden>
-      <span>Video</span>
+      <span data-i18n="video">{{ i18n.video }}</span>
       <input type="file" name="video" accept="video/mp4,video/webm,video/quicktime">
     </label>
     <label class="field" id="audio-field" hidden>
-      <span>Audio</span>
+      <span data-i18n="audio">{{ i18n.audio }}</span>
       <input type="file" name="audio" accept="audio/*">
     </label>
   </div>
 
   <div class="form-error" id="create-error" hidden></div>
 
-  <button class="btn btn-primary btn-lg" type="submit">Publish</button>
+  <button class="btn btn-primary btn-lg" type="submit" data-i18n="publish">{{ i18n.publish }}</button>
 </form>
 {% endblock %}

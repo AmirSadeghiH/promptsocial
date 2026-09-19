@@ -30,6 +30,11 @@
     toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
   }
 
+  /* ---------------- i18n helper ---------------- */
+  function t(key, params) {
+    return window.PromptlyI18n ? window.PromptlyI18n.t(key, params) : key;
+  }
+
   /* ---------------- Like / Save toggles ---------------- */
   document.addEventListener("click", function (e) {
     const btn = e.target.closest("[data-action]");
@@ -44,14 +49,14 @@
           const countEl = btn.querySelector("[data-count]");
           if (countEl) countEl.textContent = action === "like" ? data.like_count : data.save_count;
           btn.classList.toggle("is-active", action === "like" ? data.liked : data.saved);
-          if (action === "save") toast(data.saved ? "Saved 🔖" : "Removed from saved");
+          if (action === "save") toast(data.saved ? t("saved_toast") : t("removed_from_saved"));
         })
         .catch((err) => {
           if (err && err.status === 403) {
-            toast("Log in to do that");
+            toast(t("login_to_do_that"));
             setTimeout(() => (window.location.href = "/login/"), 900);
           } else {
-            toast("Something went wrong");
+            toast(t("something_wrong"));
           }
         });
     }
@@ -61,9 +66,9 @@
       post(`/api/posts/users/${btn.dataset.username}/follow/`)
         .then((data) => {
           btn.classList.toggle("is-active", data.following);
-          btn.textContent = data.following ? "Following" : "Follow";
+          btn.textContent = data.following ? t("following_btn") : t("follow");
         })
-        .catch(() => toast("Could not update follow"));
+        .catch(() => toast(t("follow_error")));
     }
 
     if (action === "copy") {
@@ -73,8 +78,8 @@
       const text = pre ? pre.textContent.trim() : "";
       copyText(text || postId).then(() => {
         const original = btn.textContent;
-        btn.textContent = "Copied!";
-        toast("Prompt copied to clipboard");
+        btn.textContent = t("copied");
+        toast(t("copy_toast"));
         post(`/api/posts/${postId}/copy/`).catch(() => {});
         setTimeout(() => (btn.textContent = original), 1500);
       });
@@ -119,9 +124,9 @@
         '<div class="comment-head"><span class="creator-name">@' +
         escapeHtml(c.user.username) +
         "</span><span>" +
-        '<span class="comment-time">' + new Date(c.created_at).toLocaleString() + "</span>" +
+        '<span class="comment-time">' + new Date(c.created_at).toLocaleString(PromptlyI18n.dateLocale()) + "</span>" +
         (window.IS_OWNER
-          ? ' <button class="comment-delete" data-comment-id="' + c.id + '">Delete</button>'
+          ? ' <button class="comment-delete" data-comment-id="' + c.id + '">' + t("delete") + '</button>'
           : "") +
         "</span></div><p>" +
         escapeHtml(c.content) +
@@ -156,9 +161,9 @@
           .then((c) => {
             commentList.insertBefore(renderComment(c), commentList.firstChild);
             textarea.value = "";
-            toast("Comment posted");
+            toast(t("comment_posted"));
           })
-          .catch(() => toast("Could not post comment"));
+          .catch(() => toast(t("comment_error")));
       });
     }
 
@@ -218,7 +223,7 @@
       })
         .then((r) => (r.ok ? r.json() : r.json().then(Promise.reject.bind(Promise))))
         .then((data) => {
-          toast("Published! 🎉");
+          toast(t("published_toast"));
           setTimeout(() => (window.location.href = `/post/${data.post.id}/`), 700);
         })
         .catch((err) => {
@@ -226,7 +231,7 @@
             errorBox.hidden = false;
             errorBox.textContent = err && err.errors
               ? Object.values(err.errors).join(" ")
-              : "Could not publish. Check your input and try again.";
+              : t("publish_error");
           }
         });
     });
@@ -238,7 +243,7 @@
     markAll.addEventListener("click", function () {
       post("/api/notifications/read-all/").then(() => {
         document.querySelectorAll(".notification.unread").forEach((el) => el.classList.remove("unread"));
-        toast("All caught up ✨");
+        toast(t("caught_up_toast"));
       });
     });
   }
@@ -312,6 +317,7 @@
         preview.className = "prompt-preview";
         const p = document.createElement("p");
         p.textContent = (post.prompt || post.title).slice(0, 180);
+        p.style.unicodeBidi = "plaintext";
         preview.appendChild(p);
         media.appendChild(preview);
       }
@@ -328,6 +334,7 @@
       meta.className = "post-card-meta";
       const creator = document.createElement("span");
       creator.className = "creator";
+      creator.setAttribute("dir", "ltr");
       creator.textContent = "@" + post.author.username;
       const stats = document.createElement("div");
       stats.className = "stats";

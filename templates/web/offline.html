@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="empty-state">
-  <h1 class="page-title">You're offline</h1>
-  <p>Promptly isn't available right now, but your cached pages still work.<br>Check your connection and try again.</p>
-  <a class="btn btn-primary" href="/">Try again</a>
+  <h1 class="page-title" data-i18n="offline_title">{{ i18n.offline_title }}</h1>
+  <p data-i18n="offline_body">{{ i18n.offline_body }}</p>
+  <a class="btn btn-primary" href="/" data-i18n="try_again">{{ i18n.try_again }}</a>
 </div>
 {% endblock %}

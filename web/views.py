@@ -44,7 +44,7 @@ def home(request):
 
 def feed_page(request, feed):
     if feed == "following" and not request.user.is_authenticated:
-        return redirect("web:login")
+        return redirect("login")
 
     viewer = _viewer(request)
     feed_fn = {
@@ -124,7 +124,7 @@ def profile_page(request, username):
 
 def saved_page(request):
     if not request.user.is_authenticated:
-        return redirect("web:login")
+        return redirect("login")
 
     save_rows = (
         Save.objects.filter(user=request.user).select_related("post").order_by("-created_at")
@@ -141,7 +141,7 @@ def saved_page(request):
 
 def notifications_page(request):
     if not request.user.is_authenticated:
-        return redirect("web:login")
+        return redirect("login")
 
     notifications = (
         Notification.objects.filter(recipient=request.user)

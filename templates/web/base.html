@@ -1,14 +1,33 @@
 {% load static %}<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="{{ lang }}" dir="{{ dir }}" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0f">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f6f9">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0f">
   <title>{% block title %}Promptly — Share AI Prompts{% endblock %}</title>
   <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
   <link rel="icon" href="{% static 'icons/icon-192.png' %}">
   <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script>
+    (function () {
+      function cookieTheme() {
+        var m = document.cookie.match(/(?:^|;\s*)promptly-theme=(dark|light)(?:;|$)/);
+        return m ? m[1] : null;
+      }
+      var theme = null;
+      try { theme = localStorage.getItem("promptly-theme"); } catch (e) {}
+      theme = theme || cookieTheme();
+      if (theme !== "dark" && theme !== "light") {
+        theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
 <body>
   <!-- ===== Top bar ===== -->
@@ -20,27 +39,40 @@
 
     <form class="search" action="{% url 'web:search' %}" method="get" role="search">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" name="q" placeholder="Search prompts..." value="{{ query|default:'' }}" autocomplete="off">
+      <input type="search" name="q" placeholder="{{ i18n.search_placeholder }}" value="{{ query|default:'' }}" autocomplete="off">
       <kbd>/</kbd>
     </form>
 
     <nav class="topbar-actions">
+      <button id="theme-toggle" class="theme-toggle" type="button"
+              aria-label="{{ i18n.toggle_theme }}" title="{{ i18n.toggle_theme }}"
+              aria-pressed="false">
+        <span class="theme-toggle-star" aria-hidden="true"></span>
+        <span class="theme-toggle-cloud" aria-hidden="true"></span>
+        <span class="theme-toggle-thumb" aria-hidden="true"></span>
+      </button>
+
+      <button id="lang-btn" class="lang-btn" type="button" aria-label="{{ i18n.switch_language }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 0 18 15.3 15.3 0 0 1 0-18z"/></svg>
+        <span>{{ i18n.lang_switch_label }}</span>
+      </button>
+
       {% if user.is_authenticated %}
         <a class="btn btn-primary btn-create" href="{% url 'web:create' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          <span>Create</span>
+          <span data-i18n="create">{{ i18n.create }}</span>
         </a>
-        <a class="icon-btn has-badge {% if unread_notifications %}show-badge{% endif %}" href="{% url 'web:notifications' %}" aria-label="Notifications">
+        <a class="icon-btn has-badge {% if unread_notifications %}show-badge{% endif %}" href="{% url 'web:notifications' %}" aria-label="{{ i18n.notifications }}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <span class="badge-dot" data-count="{{ unread_notifications }}"></span>
         </a>
-        <a class="avatar" href="{% url 'web:profile' user.username %}" aria-label="Profile">
+        <a class="avatar" href="{% url 'web:profile' user.username %}" aria-label="{{ i18n.profile }}">
           {% if user.profile_picture %}<img src="{{ user.profile_picture.url }}" alt="">
           {% else %}<span>{{ user.username|first|upper }}</span>{% endif %}
         </a>
       {% else %}
-        <a class="btn btn-ghost" href="{% url 'login' %}">Log in</a>
-        <a class="btn btn-primary" href="{% url 'signup' %}">Sign up</a>
+        <a class="btn btn-ghost" href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a>
+        <a class="btn btn-primary" href="{% url 'signup' %}" data-i18n="signup">{{ i18n.signup }}</a>
       {% endif %}
     </nav>
   </header>
@@ -51,24 +83,24 @@
       <nav class="sidenav">
         <a class="sidenav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
-          Home
+          <span data-i18n="home">{{ i18n.home }}</span>
         </a>
         <a class="sidenav-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
-          Explore
+          <span data-i18n="explore">{{ i18n.explore }}</span>
         </a>
         <a class="sidenav-link {% if request.resolver_match.url_name == 'category' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
-          Trending
+          <span data-i18n="trending">{{ i18n.trending }}</span>
         </a>
         <a class="sidenav-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          Saved
+          <span data-i18n="saved">{{ i18n.saved }}</span>
         </a>
       </nav>
 
       <div class="sidebar-section">
-        <h4>Categories</h4>
+        <h4 data-i18n="categories">{{ i18n.categories }}</h4>
         <div class="chip-list">
           {% for category in categories %}
             <a class="chip" href="{% url 'web:category' category.slug %}">{{ category.name }}</a>
@@ -76,7 +108,10 @@
         </div>
       </div>
 
-      <footer class="sidebar-footer">Promptly — built for prompt creators</footer>
+      <footer class="sidebar-footer">
+        <span data-i18n="sidebar_tagline">{{ i18n.sidebar_tagline }}</span>
+        <button id="lang-btn-footer" class="lang-btn" type="button" aria-label="{{ i18n.switch_language }}" style="margin-top:0.6rem">{{ i18n.lang_switch_label }}</button>
+      </footer>
     </aside>
 
     <!-- ===== Main ===== -->
@@ -90,28 +125,31 @@
 
   <!-- ===== Bottom nav (mobile) ===== -->
   <nav class="bottom-nav">
-    <a class="bottom-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}" aria-label="Home">
+    <a class="bottom-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}" aria-label="{{ i18n.home }}">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
-      <span>Home</span>
+      <span data-i18n="home">{{ i18n.home }}</span>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" aria-label="Explore">
+    <a class="bottom-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" aria-label="{{ i18n.explore }}">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
-      <span>Explore</span>
+      <span data-i18n="explore">{{ i18n.explore }}</span>
     </a>
-    <a class="bottom-create" href="{% url 'web:create' %}" aria-label="Create">
+    <a class="bottom-create" href="{% url 'web:create' %}" aria-label="{{ i18n.create }}">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}" aria-label="Saved">
+    <a class="bottom-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}" aria-label="{{ i18n.saved }}">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      <span>Saved</span>
+      <span data-i18n="saved">{{ i18n.saved }}</span>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% if user.is_authenticated %}{% url 'web:profile' user.username %}{% else %}{% url 'login' %}{% endif %}" aria-label="Profile">
-      {% if user.is_authenticated %}<span class="bottom-avatar">{{ user.username|first|upper }}</span><span>Profile</span>
-      {% else %}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span>Log in</span>{% endif %}
+    <a class="bottom-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% if user.is_authenticated %}{% url 'web:profile' user.username %}{% else %}{% url 'login' %}{% endif %}" aria-label="{{ i18n.profile }}">
+      {% if user.is_authenticated %}<span class="bottom-avatar">{{ user.username|first|upper }}</span><span data-i18n="profile">{{ i18n.profile }}</span>
+      {% else %}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span data-i18n="login">{{ i18n.login }}</span>{% endif %}
     </a>
   </nav>
 
   <div id="toast" class="toast" role="status"></div>
+  <script>window.PROMPTLY_LANG = "{{ lang }}";</script>
+  <script src="{% static 'js/i18n.js' %}" defer></script>
+  <script src="{% static 'js/theme.js' %}" defer></script>
   <script src="{% static 'js/app.js' %}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

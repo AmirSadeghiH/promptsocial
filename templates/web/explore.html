@@ -1,11 +1,12 @@
 {% extends "web/base.html" %}
-{% block title %}Explore · Promptly{% endblock %}
+{% load web_extras %}
+{% block title %}{{ i18n.explore }} · Promptly{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Explore</h1>
+<h1 class="page-title" data-i18n="explore">{{ i18n.explore }}</h1>
 
 <section class="section">
-  <h2 class="section-title">🔥 Trending now</h2>
+  <h2 class="section-title" data-i18n="trending_now">{{ i18n.trending_now }}</h2>
   {% with posts=explore.trending next_cursor="" %}
     {% include "web/partials/post_grid.html" %}
   {% endwith %}
@@ -13,40 +14,40 @@
 
 <div class="two-col">
   <section class="section">
-    <h2 class="section-title">Popular categories</h2>
+    <h2 class="section-title" data-i18n="popular_categories">{{ i18n.popular_categories }}</h2>
     <div class="category-cards">
       {% for category in explore.popular_categories %}
         <a class="category-card" href="{% url 'web:category' category.slug %}">
           <span class="category-name">{{ category.name }}</span>
-          <span class="category-count">{{ category.post_count }} posts</span>
+          <span class="category-count">{{ i18n.post_count|fmt:category.post_count }}</span>
         </a>
       {% empty %}
-        <p class="muted">No categories with posts yet.</p>
+        <p class="muted" data-i18n="no_categories_yet">{{ i18n.no_categories_yet }}</p>
       {% endfor %}
     </div>
   </section>
 
   <section class="section">
-    <h2 class="section-title">Creators to follow</h2>
+    <h2 class="section-title" data-i18n="creators_to_follow">{{ i18n.creators_to_follow }}</h2>
     <div class="creator-list">
       {% for creator in explore.popular_creators %}
         <a class="creator-row" href="{% url 'web:profile' creator.username %}">
           <span class="creator-avatar lg">{{ creator.display_name|first|default:"?"|upper }}</span>
           <span class="creator-info">
             <span class="creator-name">{{ creator.display_name }}</span>
-            <span class="muted">{{ creator.post_count }} posts</span>
+            <span class="muted">{{ i18n.post_count|fmt:creator.post_count }}</span>
           </span>
           {% if creator.is_verified %}<span class="verified">✔</span>{% endif %}
         </a>
       {% empty %}
-        <p class="muted">No creators yet.</p>
+        <p class="muted" data-i18n="no_creators_yet">{{ i18n.no_creators_yet }}</p>
       {% endfor %}
     </div>
   </section>
 </div>
 
 <section class="section">
-  <h2 class="section-title">✨ Just added</h2>
+  <h2 class="section-title" data-i18n="just_added">{{ i18n.just_added }}</h2>
   {% with posts=explore.latest next_cursor="" %}
     {% include "web/partials/post_grid.html" %}
   {% endwith %}

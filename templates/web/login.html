@@ -1,21 +1,21 @@
 {% extends "web/base.html" %}
-{% block title %}Log in · Promptly{% endblock %}
+{% block title %}{{ i18n.login }} · Promptly{% endblock %}
 
 {% block content %}
 <div class="auth-card">
-  <h1>Welcome back</h1>
-  <p class="muted">Log in to share prompts, save ideas and follow creators.</p>
+  <h1 data-i18n="welcome_back">{{ i18n.welcome_back }}</h1>
+  <p class="muted" data-i18n="login_tagline">{{ i18n.login_tagline }}</p>
   {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
   <form method="post" class="auth-form">
     {% csrf_token %}
-    <label class="field"><span>Username or email</span>
+    <label class="field"><span data-i18n="username_or_email">{{ i18n.username_or_email }}</span>
       <input type="text" name="username" required autocomplete="username">
     </label>
-    <label class="field"><span>Password</span>
+    <label class="field"><span data-i18n="password">{{ i18n.password }}</span>
       <input type="password" name="password" required autocomplete="current-password">
     </label>
-    <button class="btn btn-primary btn-lg" type="submit">Log in</button>
+    <button class="btn btn-primary btn-lg" type="submit" data-i18n="login">{{ i18n.login }}</button>
   </form>
-  <p class="muted">No account? <a href="{% url 'signup' %}">Sign up</a></p>
+  <p class="muted"><span data-i18n="no_account">{{ i18n.no_account }}</span> <a href="{% url 'signup' %}" data-i18n="signup">{{ i18n.signup }}</a></p>
 </div>
 {% endblock %}

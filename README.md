@@ -62,6 +62,8 @@ password `demo-password-123`. Admin: create one with `python manage.py createsup
 - Colors: near-black surfaces (`#0a0a0f` → `#14141c`), violet accent `#8b7cf6`,
   semantic like-red / save-gold, 8% white borders.
 - Typography: Inter for UI, JetBrains Mono for prompt text.
+- **Dark/light theme:** animated sun/moon toggle in the top bar; persists via `localStorage` + `promptly-theme` cookie, respects `prefers-color-scheme`, and swaps `theme-color` metas. Full light palette lives in `static/css/app.css` under `:root[data-theme="light"]`.
+- **Bilingual (EN/FA):** top-bar language button toggles English ⇄ فارسی without a reload. Server renders pages from the `promptly-lang` cookie (`web/context_processors.py`, strings in `web/i18n_strings.py`); `static/js/i18n.js` re-applies strings live, flips `dir` to RTL, and swaps to the Vazirmatn typeface. Mixed-direction content (usernames, prompts) is isolated with `dir="auto"` / `unicode-bidi: plaintext`.
 - Desktop: sticky top bar + left sidebar (nav + categories) + 4-column masonry.
 - Mobile/PWA: single-column cards, top bar with search, floating create button,
   bottom tab bar (Home / Explore / ＋ / Saved / Profile), safe-area aware.
