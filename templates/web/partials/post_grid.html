@@ -12,9 +12,35 @@ Expects: posts (list of serialized post dicts)
         {% elif post.video %}
           <video src="{{ post.video }}" muted preload="metadata" playsinline></video>
           <span class="media-badge">▶ {{ i18n.video }}</span>
+        {% elif post.audio %}
+          {% comment %} A waveform reads as "audio" at a glance and avoids printing
+          the title twice — the card body already carries it below. {% endcomment %}
+          <div class="prompt-preview audio-preview">
+            <svg class="audio-wave" viewBox="0 0 128 34" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <g fill="currentColor">
+                <rect x="0" y="13" width="4" height="8" rx="2"/>
+                <rect x="8" y="9" width="4" height="16" rx="2"/>
+                <rect x="16" y="4" width="4" height="26" rx="2"/>
+                <rect x="24" y="11" width="4" height="12" rx="2"/>
+                <rect x="32" y="2" width="4" height="30" rx="2"/>
+                <rect x="40" y="14" width="4" height="6" rx="2"/>
+                <rect x="48" y="7" width="4" height="20" rx="2"/>
+                <rect x="56" y="12" width="4" height="10" rx="2"/>
+                <rect x="64" y="1" width="4" height="32" rx="2"/>
+                <rect x="72" y="10" width="4" height="14" rx="2"/>
+                <rect x="80" y="15" width="4" height="4" rx="2"/>
+                <rect x="88" y="5" width="4" height="24" rx="2"/>
+                <rect x="96" y="12" width="4" height="10" rx="2"/>
+                <rect x="104" y="8" width="4" height="18" rx="2"/>
+                <rect x="112" y="14" width="4" height="6" rx="2"/>
+                <rect x="120" y="11" width="4" height="12" rx="2"/>
+              </g>
+            </svg>
+            <span class="media-badge">♪ {{ i18n.audio }}</span>
+          </div>
         {% else %}
           <div class="prompt-preview">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 12h8"/></svg>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 12h8"/></svg>
             <p>{{ post.prompt|default:post.title|truncatechars:180 }}</p>
             <span class="media-badge">{{ i18n.prompt }}</span>
           </div>
@@ -25,19 +51,19 @@ Expects: posts (list of serialized post dicts)
         <a class="post-card-title" href="{% url 'web:post-detail' post.id %}">{{ post.title }}</a>
         <div class="post-card-meta">
           <a class="creator" href="{% url 'web:profile' post.author.username %}">
-            <span class="creator-avatar">{{ post.author.display_name|first|default:"?"|upper }}</span>
+            {% include "web/partials/avatar.html" with url=post.author.profile_picture name=post.author.display_name cls="creator-avatar" %}
             <span class="creator-name">@{{ post.author.username }}</span>
             {% if post.author.is_verified %}<span class="verified" title="{{ i18n.verified }}">✔</span>{% endif %}
           </a>
           <div class="stats">
             <button class="stat-btn like-btn {% if post.is_liked %}is-active{% endif %}"
-                    data-action="like" data-post-id="{{ post.id }}" aria-label="Like">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.5-1.6 2-3.3 2-5a5 5 0 0 0-9.6-1.8A5 5 0 0 0 3 9c0 1.7.5 3.4 2 5l7 7z"/></svg>
+                    data-action="like" data-post-id="{{ post.id }}" aria-label="{{ i18n.like_action }}" title="{{ i18n.like_action }}">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 14c1.5-1.6 2-3.3 2-5a5 5 0 0 0-9.6-1.8A5 5 0 0 0 3 9c0 1.7.5 3.4 2 5l7 7z"/></svg>
               <span data-count="like">{{ post.like_count }}</span>
             </button>
             <button class="stat-btn save-btn {% if post.is_saved %}is-active{% endif %}"
-                    data-action="save" data-post-id="{{ post.id }}" aria-label="Save">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    data-action="save" data-post-id="{{ post.id }}" aria-label="{{ i18n.save_action }}" title="{{ i18n.save_action }}">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
               <span data-count="save">{{ post.save_count }}</span>
             </button>
           </div>

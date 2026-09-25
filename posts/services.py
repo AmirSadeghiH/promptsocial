@@ -2,12 +2,24 @@ import base64
 import json
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Case, Count, ExpressionWrapper, F, FloatField, Q, Value, When
+from django.db.models import (
+    Case,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Q,
+    Value,
+    When,
+)
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from interactions.models import Follow
+from interactions.models import Follow, Like, Save
 from posts.models import Category, Post
 
 
@@ -15,8 +27,14 @@ class InvalidCursor(ValueError):
     """Raised when a feed cursor cannot be decoded safely."""
 
 
-def post_list_queryset():
-    return (
+def post_list_queryset(viewer=None):
+    """Base post queryset with engagement counts.
+
+    When an authenticated ``viewer`` is passed, ``viewer_liked`` /
+    ``viewer_saved`` are annotated as cheap EXISTS subqueries so
+    ``serialize_post`` does not run two extra queries per post (N+1).
+    """
+    queryset = (
         Post.objects.select_related("author", "category")
         .prefetch_related("tags")
         .annotate(
@@ -27,6 +45,31 @@ def post_list_queryset():
             copy_count=Count("copy_events", distinct=True),
         )
     )
+    if viewer is not None and getattr(viewer, "is_authenticated", False):
+        queryset = queryset.annotate(
+            viewer_liked=Exists(
+                Like.objects.filter(user=viewer, post_id=OuterRef("pk"))
+            ),
+            viewer_saved=Exists(
+                Save.objects.filter(user=viewer, post_id=OuterRef("pk"))
+            ),
+        )
+    return queryset
+
+
+def _viewer_followed_ids(viewer):
+    """Followed-user ids for the viewer, computed once per request cycle.
+
+    The set is cached on the viewer instance so serializing a whole feed
+    page performs a single Follow query instead of one per post.
+    """
+    cached = getattr(viewer, "_promptly_followed_ids", None)
+    if cached is None:
+        cached = set(
+            Follow.objects.filter(follower=viewer).values_list("following_id", flat=True)
+        )
+        viewer._promptly_followed_ids = cached
+    return cached
 
 
 def _author_payload(post, viewer=None):
@@ -36,13 +79,12 @@ def _author_payload(post, viewer=None):
         "username": author.username,
         "display_name": author.display_name or author.username,
         "is_verified": author.is_verified,
+        "profile_picture": author.profile_picture.url if author.profile_picture else None,
     }
     if getattr(post, "author_followers", None) is not None:
         data["follower_count"] = post.author_followers
     if viewer is not None and viewer.is_authenticated:
-        data["is_following"] = Follow.objects.filter(
-            follower=viewer, following=author
-        ).exists()
+        data["is_following"] = author.id in _viewer_followed_ids(viewer)
     return data
 
 
@@ -50,6 +92,12 @@ def serialize_post(post, *, viewer=None):
     def _flag(manager_name):
         if not viewer or not viewer.is_authenticated:
             return False
+        # Prefer the EXISTS annotation (no extra query); fall back to a
+        # per-post lookup only when the queryset was built without a viewer.
+        annotation = "viewer_liked" if manager_name == "likes" else "viewer_saved"
+        annotated = getattr(post, annotation, None)
+        if annotated is not None:
+            return bool(annotated)
         return getattr(post, manager_name).filter(user=viewer).exists()
 
     return {
@@ -192,7 +240,7 @@ def _paginate_trending(queryset, *, cursor, page_size, viewer=None):
 
 def get_latest_feed(*, cursor=None, page_size=20, viewer=None):
     return _paginate_chronological(
-        post_list_queryset(),
+        post_list_queryset(viewer),
         cursor=cursor,
         page_size=page_size,
         viewer=viewer,
@@ -202,7 +250,7 @@ def get_latest_feed(*, cursor=None, page_size=20, viewer=None):
 def get_following_feed(user, *, cursor=None, page_size=20, viewer=None):
     followed_user_ids = Follow.objects.filter(follower=user).values("following_id")
     return _paginate_chronological(
-        post_list_queryset().filter(author_id__in=followed_user_ids),
+        post_list_queryset(viewer or user).filter(author_id__in=followed_user_ids),
         cursor=cursor,
         page_size=page_size,
         viewer=viewer or user,
@@ -226,7 +274,7 @@ def get_trending_feed(*, cursor=None, page_size=20, viewer=None):
         output_field=FloatField(),
     )
     queryset = (
-        post_list_queryset()
+        post_list_queryset(viewer)
         .filter(created_at__gte=now - timedelta(days=30))
         .annotate(
             trending_score=ExpressionWrapper(
@@ -241,7 +289,7 @@ def get_trending_feed(*, cursor=None, page_size=20, viewer=None):
 def search_posts(query, *, post_type=None, category_slug=None, tag_slug=None,
                  ai_model=None, cursor=None, page_size=20, viewer=None):
     """Search posts by title, prompt, description, tags, category, AI model, creator."""
-    queryset = post_list_queryset()
+    queryset = post_list_queryset(viewer)
     if query:
         queryset = queryset.filter(
             Q(title__icontains=query)
@@ -268,6 +316,23 @@ def search_posts(query, *, post_type=None, category_slug=None, tag_slug=None,
 
 
 def get_explore_data(viewer=None):
+    creator_rows = list(
+        get_user_model()
+        .objects.annotate(post_count=Count("posts"))
+        .filter(post_count__gt=0)
+        .order_by("-post_count", "username")
+        .values("id", "username", "display_name", "is_verified", "post_count")[:6]
+    )
+    profile_pictures = {
+        row["id"]: f"{settings.MEDIA_URL}{row['path']}"
+        for row in get_user_model()
+        .objects.filter(
+            pk__in=[row["id"] for row in creator_rows],
+            profile_picture__isnull=False,
+        )
+        .exclude(profile_picture="")
+        .values("id", path=F("profile_picture"))
+    }
     return {
         "latest": get_latest_feed(page_size=6, viewer=viewer)["results"],
         "trending": get_trending_feed(page_size=6, viewer=viewer)["results"],
@@ -277,11 +342,12 @@ def get_explore_data(viewer=None):
             .order_by("-post_count", "name")
             .values("id", "name", "slug", "post_count")[:6],
         ),
-        "popular_creators": list(
-            get_user_model()
-            .objects.annotate(post_count=Count("posts"))
-            .filter(post_count__gt=0)
-            .order_by("-post_count", "username")
-            .values("id", "username", "display_name", "is_verified", "post_count")[:6],
-        ),
+        "popular_creators": [
+            {
+                **creator,
+                "display_name": creator.get("display_name") or creator["username"],
+                "profile_picture": profile_pictures.get(creator["id"]),
+            }
+            for creator in creator_rows
+        ],
     }

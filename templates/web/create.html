@@ -1,10 +1,12 @@
 {% extends "web/base.html" %}
+{% load static %}
 {% block title %}{{ i18n.share_a_prompt }} · Promptly{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block content %}
 <h1 class="page-title" data-i18n="share_a_prompt">{{ i18n.share_a_prompt }}</h1>
 
-<form class="create-form" id="create-form" enctype="multipart/form-data">
+<form class="create-form" id="create-form" enctype="multipart/form-data" novalidate>
   <label class="field">
     <span data-i18n="title">{{ i18n.title }}</span>
     <input type="text" name="title" maxlength="200" required placeholder="{{ i18n.title_placeholder }}">
@@ -35,9 +37,9 @@
     <input type="text" name="ai_model" maxlength="100" placeholder="{{ i18n.ai_model_placeholder }}">
   </label>
 
-  <label class="field">
+  <label class="field" id="prompt-field">
     <span data-i18n="the_prompt">{{ i18n.the_prompt }}</span>
-    <textarea name="prompt" rows="6" placeholder="{{ i18n.prompt_placeholder }}"></textarea>
+    <textarea name="prompt" id="id_prompt" rows="6" placeholder="{{ i18n.prompt_placeholder }}"></textarea>
   </label>
 
   <label class="field">
@@ -45,23 +47,28 @@
     <textarea name="description" rows="3" placeholder="{{ i18n.description_placeholder }}"></textarea>
   </label>
 
-  <div id="media-upload-fields">
-    <label class="field" id="image-field">
-      <span data-i18n="image">{{ i18n.image }}</span>
-      <input type="file" name="image" accept="image/*">
-    </label>
-    <label class="field" id="video-field" hidden>
-      <span data-i18n="video">{{ i18n.video }}</span>
+  <!-- Dynamic media field: exactly one zone, swapped by post type -->
+  <div class="field" id="media-upload-fields">
+    <span data-i18n="media_label">{{ i18n.media_label }}</span>
+    <div id="image-field" data-upload='{"kind":"image","label":"{{ i18n.upload_image|escapejs }}"}' hidden>
+      <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif">
+    </div>
+    <div id="video-field" data-upload='{"kind":"video","label":"{{ i18n.upload_video|escapejs }}"}' hidden>
       <input type="file" name="video" accept="video/mp4,video/webm,video/quicktime">
-    </label>
-    <label class="field" id="audio-field" hidden>
-      <span data-i18n="audio">{{ i18n.audio }}</span>
-      <input type="file" name="audio" accept="audio/*">
-    </label>
+    </div>
+    <div id="audio-field" data-upload='{"kind":"audio","label":"{{ i18n.upload_audio|escapejs }}"}' hidden>
+      <input type="file" name="audio" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4">
+    </div>
   </div>
 
   <div class="form-error" id="create-error" hidden></div>
 
   <button class="btn btn-primary btn-lg" type="submit" data-i18n="publish">{{ i18n.publish }}</button>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/upload.js' %}" defer></script>
+<script src="{% static 'js/player.js' %}" defer></script>
+<script src="{% static 'js/create-form.js' %}" defer></script>
 {% endblock %}

@@ -294,7 +294,7 @@ class PostCrudApiTests(TestCase):
             self._create_payload(),
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 302)  # login redirect
+        self.assertEqual(response.status_code, 401)  # JSON unauthorized (API compat)
 
     def test_authenticated_user_can_create_a_post(self):
         self.client.force_login(self.author)

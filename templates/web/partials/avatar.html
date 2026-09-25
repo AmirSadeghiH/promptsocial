@@ -1,0 +1,22 @@
+{% load web_extras %}{% comment %}
+Reusable circular avatar — the single source of truth for profile pictures.
+
+Params:
+  url   — a FileField/FieldFile, an image URL, or nothing for the fallback
+  name  — display name / username used for the fallback initial
+  cls   — wrapper sizing class: "avatar" (topbar), "creator-avatar",
+          "creator-avatar lg", "profile-avatar", "notification-avatar",
+          "bottom-avatar", "avatar suggest-avatar", "comment-avatar-fallback"…
+
+Pass the field itself rather than its .url: reading .url on an empty
+FileField raises ValueError, and include extra context does not swallow it.
+The file_url filter above normalises a field, a FieldFile or a plain URL.
+
+The initial always renders underneath; the image overlays it. If the image
+fails to load it hides itself, revealing the initial — broken files never
+show a torn-image icon.
+{% endcomment %}
+<span class="avatar-shell {{ cls }}">
+  <span class="avatar-initial" aria-hidden="true">{{ name|first|default:"?"|upper }}</span>
+  {% with src=url|file_url %}{% if src %}<img class="avatar-img" src="{{ src }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{% endwith %}
+</span>

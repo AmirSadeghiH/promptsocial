@@ -1,5 +1,16 @@
 {% extends "web/base.html" %}
 {% block title %}{{ post.title }} · Promptly{% endblock %}
+{% block description %}{{ post.description|default:post.prompt|striptags|truncatechars:155 }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.description|default:post.prompt|striptags|truncatechars:200 }}{% endblock %}
+{# A post's own image beats the site icon; block.super keeps the fallback. #}
+{% block og_image %}{% if post.image %}{{ post.image }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block twitter_image %}{% if post.image %}{{ post.image }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block og_image_alt %}{{ post.title }}{% endblock %}
+{# Ratio is unknown for user uploads, so drop the fixed icon dimensions. #}
+{% block og_image_dims %}{% if not post.image %}{{ block.super }}{% endif %}{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
 
 {% block content %}
 <article class="post-detail" data-post-id="{{ post.id }}">
@@ -7,7 +18,13 @@
     {% if post.image %}
       <img src="{{ post.image }}" alt="{{ post.title }}">
     {% elif post.video %}
-      <video src="{{ post.video }}" controls playsinline></video>
+      <video src="{{ post.video }}" data-media-player playsinline preload="metadata"></video>
+    {% elif post.audio %}
+      <div class="detail-audio-card">
+        <audio src="{{ post.audio }}" data-media-player preload="metadata"
+               data-title="{{ post.title }}"
+               data-subtitle="@{{ post.author.username }}"></audio>
+      </div>
     {% else %}
       <div class="prompt-preview lg">
         <p>{{ post.prompt|default:post.title }}</p>
@@ -18,7 +35,9 @@
   <div class="detail-body">
     <header class="detail-header">
       <div class="creator">
-        <a class="creator-avatar lg" href="{% url 'web:profile' post.author.username %}">{{ post.author.display_name|first|default:"?"|upper }}</a>
+        <a href="{% url 'web:profile' post.author.username %}">
+          {% include "web/partials/avatar.html" with url=post.author.profile_picture name=post.author.display_name cls="creator-avatar lg" %}
+        </a>
         <div class="creator-info">
           <a class="creator-name" href="{% url 'web:profile' post.author.username %}">
             @{{ post.author.username }} {% if post.author.is_verified %}<span class="verified">✔</span>{% endif %}
@@ -88,4 +107,29 @@
     </section>
   </div>
 </article>
+{% endblock %}
+
+{% block json_ld_extra %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": "{{ post.title|escapejs }}",
+  "url": "{{ request.build_absolute_uri }}",
+  "datePublished": "{{ post.created_at|date:'c' }}",
+  "inLanguage": "{{ lang }}",
+  {% if post.image %}"image": "{{ post.image }}",{% endif %}
+  {% if post.ai_model %}"about": "{{ post.ai_model|escapejs }}",{% endif %}
+  {% if post.prompt %}"text": "{{ post.prompt|truncatechars:1200|escapejs }}",{% endif %}
+  "creator": {
+    "@type": "Person",
+    "name": "{{ post.author.display_name|default:post.author.username|escapejs }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'web:profile' post.author.username %}"
+  },
+  "interactionStatistic": [
+    {"@type": "InteractionCounter", "interactionType": "https://schema.org/LikeAction", "userInteractionCount": {{ post.like_count }}},
+    {"@type": "InteractionCounter", "interactionType": "https://schema.org/CommentAction", "userInteractionCount": {{ post.comment_count }}}
+  ]
+}
+</script>
 {% endblock %}

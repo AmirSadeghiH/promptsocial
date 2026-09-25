@@ -1,0 +1,116 @@
+{% extends "web/base.html" %}
+{% load static web_extras %}
+{% block title %}{{ i18n.edit_profile }} · Promptly{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<div class="page-head profile-edit-head">
+  <h1 class="page-title" data-i18n="edit_profile">{{ i18n.edit_profile }}</h1>
+  <a class="btn btn-ghost btn-sm" href="{% url 'web:profile' user.username %}">
+    {{ i18n.view_profile }} ↗
+  </a>
+</div>
+
+<form class="profile-edit" id="profile-edit-form" enctype="multipart/form-data">
+  <!-- ===== Avatar ===== -->
+  <section class="edit-card edit-avatar-card">
+    <div class="avatar-edit">
+      <div class="edit-avatar-ring">
+        <div class="edit-avatar" id="avatar-preview">
+          {% if user.profile_picture %}
+            <img id="avatar-img" src="{{ user.profile_picture.url }}" alt="">
+          {% else %}
+            <span id="avatar-fallback">{{ user.display_name|default:user.username|first|upper }}</span>
+          {% endif %}
+        </div>
+        <button type="button" class="edit-avatar-change" id="avatar-btn" aria-label="{{ i18n.change_photo }}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        </button>
+      </div>
+      <div class="avatar-edit-actions">
+        <button type="button" class="btn btn-outline btn-sm" id="avatar-pick">{{ i18n.change_photo }}</button>
+        {% if user.profile_picture %}
+          <button type="button" class="btn btn-ghost btn-sm" id="avatar-remove">{{ i18n.remove_photo }}</button>
+        {% endif %}
+      </div>
+      <div id="avatar-upload" data-upload='{"kind":"image","label":"{{ i18n.change_photo|escapejs }}"}'>
+        <input type="file" name="profile_picture" id="avatar-input"
+               accept="image/jpeg,image/png,image/webp,image/gif">
+      </div>
+      <div class="form-error" id="avatar-error" hidden></div>
+    </div>
+  </section>
+
+  <!-- ===== Identity ===== -->
+  <section class="edit-card">
+    <h2 class="edit-card-title" data-i18n="account_info">{{ i18n.account_info }}</h2>
+    <label class="field">
+      <span data-i18n="username">{{ i18n.username }}</span>
+      <div class="input-prefix-wrap">
+        <span class="input-prefix">@</span>
+        <input type="text" name="username" id="id_username" maxlength="150"
+               value="{{ user.username }}" required autocomplete="username"
+               pattern="[A-Za-z0-9_@.\+\-]+" dir="ltr">
+      </div>
+      <small class="field-hint" data-i18n="username_hint">{{ i18n.username_hint }}</small>
+    </label>
+
+    <label class="field">
+      <span data-i18n="display_name">{{ i18n.display_name }}</span>
+      <input type="text" name="display_name" id="id_display_name" maxlength="100"
+             value="{{ user.display_name }}" placeholder="{{ i18n.display_name_placeholder }}">
+    </label>
+
+    <label class="field">
+      <span data-i18n="biography">{{ i18n.biography }}</span>
+      <textarea name="biography" id="id_biography" rows="4" maxlength="500"
+                placeholder="{{ i18n.biography_placeholder }}">{{ user.biography }}</textarea>
+      <small class="field-hint"><span id="bio-count">{{ user.biography|length }}</span>/500</small>
+    </label>
+  </section>
+
+  <!-- ===== Password ===== -->
+  <section class="edit-card" id="password-section">
+    <h2 class="edit-card-title" data-i18n="change_password">{{ i18n.change_password }}</h2>
+    <p class="muted edit-card-sub" data-i18n="change_password_hint">{{ i18n.change_password_hint }}</p>
+
+    <label class="field">
+      <span data-i18n="current_password">{{ i18n.current_password }}</span>
+      <input type="password" name="current_password" id="id_current_password"
+             autocomplete="current-password">
+    </label>
+
+    <label class="field">
+      <span data-i18n="new_password">{{ i18n.new_password }}</span>
+      <input type="password" name="new_password" id="id_new_password"
+             autocomplete="new-password" minlength="8">
+      <div class="pw-strength" id="pw-strength" aria-hidden="true">
+        <span class="pw-bar"></span><span class="pw-bar"></span><span class="pw-bar"></span><span class="pw-bar"></span>
+        <span class="pw-label" id="pw-label"></span>
+      </div>
+    </label>
+
+    <label class="field">
+      <span data-i18n="confirm_password">{{ i18n.confirm_password }}</span>
+      <input type="password" name="confirm_password" id="id_confirm_password"
+             autocomplete="new-password">
+    </label>
+
+    <div class="form-error" id="password-error" hidden></div>
+    <button type="button" class="btn btn-outline" id="password-save">{{ i18n.update_password }}</button>
+  </section>
+
+  <!-- ===== Save bar ===== -->
+  <div class="form-error" id="profile-error" hidden></div>
+  <div class="edit-savebar">
+    <span class="muted save-state" id="save-state"></span>
+    <button class="btn btn-primary btn-lg" type="submit" id="profile-save">{{ i18n.save_changes }}</button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>window.PROMPTLY_PROFILE_USERNAME = "{{ user.username|escapejs }}";</script>
+<script src="{% static 'js/upload.js' %}" defer></script>
+<script src="{% static 'js/profile-edit.js' %}" defer></script>
+{% endblock %}

@@ -111,6 +111,27 @@
     }).catch(() => {});
   }
 
+  /* ---------------- Shared avatar builder (mirrors partials/avatar.html) ---------------- */
+  function buildAvatar(user, cls) {
+    const shell = document.createElement("span");
+    shell.className = "avatar-shell " + cls;
+    const initial = document.createElement("span");
+    initial.className = "avatar-initial";
+    initial.setAttribute("aria-hidden", "true");
+    initial.textContent = ((user.display_name || user.username || "?").charAt(0) || "?").toUpperCase();
+    shell.appendChild(initial);
+    if (user.profile_picture) {
+      const img = document.createElement("img");
+      img.className = "avatar-img";
+      img.src = user.profile_picture;
+      img.alt = "";
+      img.loading = "lazy";
+      img.addEventListener("error", () => (img.style.display = "none"));
+      shell.appendChild(img);
+    }
+    return shell;
+  }
+
   /* ---------------- Comments ---------------- */
   const commentList = document.querySelector(".comment-list");
   if (commentList) {
@@ -120,7 +141,12 @@
     function renderComment(c) {
       const el = document.createElement("div");
       el.className = "comment";
-      el.innerHTML =
+      const row = document.createElement("div");
+      row.className = "comment-row";
+      row.appendChild(buildAvatar(c.user, "comment-avatar comment-avatar-fallback"));
+      const main = document.createElement("div");
+      main.className = "comment-main";
+      main.innerHTML =
         '<div class="comment-head"><span class="creator-name">@' +
         escapeHtml(c.user.username) +
         "</span><span>" +
@@ -131,6 +157,8 @@
         "</span></div><p>" +
         escapeHtml(c.content) +
         "</p>";
+      row.appendChild(main);
+      el.appendChild(row);
       return el;
     }
 
@@ -254,7 +282,9 @@
   if (grid && loadMore && loadMore.dataset.nextCursor) {
     const feedPath = window.location.pathname;
     let apiUrl;
-    if (feedPath.startsWith("/feed/")) {
+    if (feedPath === "/") {
+      apiUrl = "/api/posts/feed/recommended/";
+    } else if (feedPath.startsWith("/feed/")) {
       apiUrl = `/api/posts/feed/${feedPath.split("/")[2]}/`;
     } else if (feedPath.startsWith("/category/")) {
       apiUrl = `/api/posts/categories/${feedPath.split("/")[2]}/`;
@@ -332,10 +362,15 @@
 
       const meta = document.createElement("div");
       meta.className = "post-card-meta";
-      const creator = document.createElement("span");
+      const creator = document.createElement("a");
       creator.className = "creator";
+      creator.href = `/profile/${encodeURIComponent(post.author.username)}/`;
       creator.setAttribute("dir", "ltr");
-      creator.textContent = "@" + post.author.username;
+      creator.appendChild(buildAvatar(post.author, "creator-avatar"));
+      const creatorName = document.createElement("span");
+      creatorName.className = "creator-name";
+      creatorName.textContent = "@" + post.author.username;
+      creator.appendChild(creatorName);
       const stats = document.createElement("div");
       stats.className = "stats";
       stats.innerHTML =

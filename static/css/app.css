@@ -16,7 +16,8 @@
   /* Text */
   --text: #f2f2f5;
   --text-secondary: #9a9aa5;
-  --text-muted: #5c5c68;
+  /* 5.9:1 on --bg — the previous #5c5c68 measured 2.9:1 and failed WCAG AA. */
+  --text-muted: #8b8b99;
 
   /* Accent — warm violet (premium, not linear-purple copy) */
   --accent: #8b7cf6;
@@ -44,8 +45,13 @@
   --sidebar-w: 232px;
   --main-max: 1180px;
 
-  --font: "Inter", "Vazirmatn", "SF Pro Display", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Script-aware stacks. Glyph-by-glyph fallback does the work: Latin always
+     resolves in Inter, Arabic script always falls through to Vazirmatn — in
+     both languages. The *Fallback families are local-only metric twins, used
+     solely if the webfont is unavailable, and they sit after both real fonts
+     so they can never steal a glyph from the other script. */
+  --font: "Inter", "Vazirmatn", "Inter Fallback", "Vazirmatn Fallback", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
   /* Theme-aware furniture */
@@ -57,14 +63,15 @@
   --avatar-gradient: linear-gradient(135deg, #2c2c3a, #1a1a24);
   --prompt-glow: rgba(139, 124, 246, 0.12);
   --media-overlay: rgba(10, 10, 15, 0.72);
+  --media-badge-text: #ffffff;
   --danger-soft-bg: rgba(239, 68, 68, 0.12);
   --danger-soft-border: rgba(239, 68, 68, 0.45);
   --danger-text: #fca5a5;
 
-  /* Theme toggle */
+  /* Theme switch */
   --tt-track: linear-gradient(135deg, #23234a, #101024);
-  --tt-star: rgba(255, 255, 255, 0.85);
-  --tt-thumb: linear-gradient(135deg, #413c6e, #26224a);
+  --tt-star: rgba(255, 255, 255, 0.8);
+  --tt-thumb-bg: linear-gradient(135deg, #4d4784, #2b2657);
 
   color-scheme: dark;
 
@@ -82,7 +89,8 @@
 
   --text: #1a1a24;
   --text-secondary: #5a5a6a;
-  --text-muted: #8e8e9e;
+  /* 5.5:1 on --bg — the previous #8e8e9e measured 2.9:1 and failed WCAG AA. */
+  --text-muted: #63636f;
 
   --accent: #6d5ef0;
   --accent-hover: #5646e8;
@@ -105,21 +113,71 @@
   --scrollbar-thumb: #d8d8e4;
   --avatar-gradient: linear-gradient(135deg, #e9e7fa, #f6f5fd);
   --prompt-glow: rgba(109, 94, 240, 0.09);
+  /* Media chips sit on photos *and* on plain card surfaces. A near-black pill
+     shouted louder than the post titles in light mode, so the chip inverts
+     with the theme instead of staying dark. */
+  --media-overlay: rgba(255, 255, 255, 0.86);
+  --media-badge-text: #22222e;
   --danger-soft-bg: rgba(220, 38, 38, 0.07);
   --danger-soft-border: rgba(220, 38, 38, 0.35);
   --danger-text: #b91c1c;
 
   --tt-track: linear-gradient(135deg, #cde2ff, #ffe7c2);
   --tt-star: transparent;
-  --tt-thumb: linear-gradient(135deg, #ffd76e, #ffab2e);
+  --tt-thumb-bg: linear-gradient(135deg, #ffd76e, #ffab2e);
 
   color-scheme: light;
 }
 
-/* ---------- Persian typography ---------- */
+/* ---------- Persian typography ----------
+   The font stack is already script-aware, so Persian never needs its own
+   family here. What it does need is different *metrics*: Arabic script sits
+   on a deeper baseline and cannot be tracked, because letter-spacing breaks
+   the joins between letters. */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+  size-adjust: 107%;
+  ascent-override: 90%;
+  descent-override: 22.4%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Vazirmatn Fallback";
+  src: local("Tahoma"), local("Segoe UI"), local("Noto Naskh Arabic");
+  size-adjust: 96%;
+  ascent-override: 100%;
+  descent-override: 31%;
+  line-gap-override: 0%;
+}
+
 html[lang="fa"] {
-  --font: "Vazirmatn", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.85;
+}
+
+/* Any tracked heading or label would tear Persian letterforms apart. */
+html[lang="fa"] body,
+html[lang="fa"] .logo,
+html[lang="fa"] .page-title,
+html[lang="fa"] .section-title,
+html[lang="fa"] .detail-title,
+html[lang="fa"] .profile-name,
+html[lang="fa"] .edit-card-title,
+html[lang="fa"] .auth-card h1,
+html[lang="fa"] .sidebar-section h4,
+html[lang="fa"] .suggest-title,
+html[lang="fa"] .footer-col h4,
+html[lang="fa"] .media-badge,
+html[lang="fa"] .prompt-box-head,
+html[lang="fa"] .btn,
+html[lang="fa"] .chip,
+html[lang="fa"] .tab,
+html[lang="fa"] .lang-btn {
+  letter-spacing: 0;
+}
+html[lang="fa"] .prompt-box pre,
+html[lang="fa"] .prompt-preview p {
+  unicode-bidi: plaintext;
 }
 
 /* ---------- Reset ---------- */
@@ -401,7 +459,11 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 1.4rem;
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Swipe the tabs on a phone; an OS scrollbar under them reads as breakage. */
+  scrollbar-width: none;
 }
+.feed-tabs::-webkit-scrollbar { display: none; }
 .tab {
   padding: 0.55rem 1.05rem;
   font-size: 0.92rem;
@@ -419,7 +481,11 @@ input:focus, textarea:focus, select:focus {
    Post grid (masonry)
    ============================================================ */
 .post-grid {
-  column-count: 4;
+  /* Width-driven, not count-driven: the home feed is only ~800px wide even at
+     1440 (the suggestions rail takes 280), so a fixed count of 4 produced
+     188px cards where the avatar, name and stats could not coexist. A 240px
+     ideal with a hard cap of 4 adapts to each container instead. */
+  columns: 240px 4;
   column-gap: 1.1rem;
 }
 .post-card {
@@ -482,7 +548,7 @@ input:focus, textarea:focus, select:focus {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ffffff;
+  color: var(--media-badge-text, #ffffff);
 }
 .prompt-preview .media-badge { position: static; align-self: flex-start; }
 
@@ -496,7 +562,13 @@ input:focus, textarea:focus, select:focus {
 }
 .post-card-title:hover { color: var(--accent-hover); }
 
-.post-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.post-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.post-card-meta .creator { flex: 1 1 auto; }
 
 .creator { display: inline-flex; align-items: center; gap: 0.45rem; min-width: 0; }
 .creator-avatar {
@@ -802,9 +874,10 @@ textarea { resize: vertical; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  font-size: 0.62rem;
-  color: var(--text-muted);
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-secondary);
   padding: 0.3rem 0.7rem;
   border-radius: var(--radius-sm);
 }
@@ -839,26 +912,36 @@ textarea { resize: vertical; }
 /* ============================================================
    Responsive
    ============================================================ */
-@media (max-width: 1280px) { .post-grid { column-count: 3; } }
-
 @media (max-width: 1024px) {
   .sidebar { display: none; }
   .main { padding: 1.2rem 1.1rem 6.5rem; max-width: 720px; margin: 0 auto; }
   .bottom-nav { display: flex; }
-  .post-grid { column-count: 2; }
   .two-col { grid-template-columns: 1fr; }
   body { padding-bottom: 4.5rem; }
   .toast { bottom: 6.5rem; }
 }
 
 @media (max-width: 640px) {
-  .topbar { padding: 0 0.8rem; gap: 0.6rem; }
-  .logo-text { display: none; }
-  .search kbd { display: none; }
-  .search input { padding-right: 1rem; }
-  .btn-create span { display: none; }
-  .btn-create { padding: 0.55rem 0.7rem; }
-  .post-grid { column-count: 1; column-gap: 0; }
+  .topbar { padding: 0 0.7rem; gap: 0.5rem; }
+  /* Scope these to the topbar: the drawer header and footer still want the
+     full wordmark, and the old bare selectors were hiding those too. */
+  .topbar .logo-text { display: none; }
+  .topbar .search kbd { display: none; }
+  .topbar .search input { padding-inline: 2.5rem 1rem; }
+  .topbar .btn-create span { display: none; }
+  .topbar .btn-create { padding: 0.55rem 0.7rem; }
+  /* iOS Safari force-zooms the viewport when a focused field renders under
+     16px, which then leaves the whole page scrolled sideways. The extra
+     selectors are needed because `.search input` and friends set their own
+     size at higher specificity than a bare element selector. */
+  input, textarea, select,
+  .topbar .search input,
+  .comment-form textarea,
+  .create-form input,
+  .create-form textarea,
+  .auth-form input,
+  .profile-edit input,
+  .profile-edit textarea { font-size: 16px; }
   .post-card { margin-bottom: 1.25rem; }
   .post-card-media img, .post-card-media video { max-height: none; }
   .page-title { font-size: 1.35rem; }
@@ -868,115 +951,114 @@ textarea { resize: vertical; }
 }
 
 /* ============================================================
-   Theme toggle
-   ============================================================ */
+   Theme switch — the signature control
+   ------------------------------------------------------------
+   The knob's travel is a *state* of html[data-theme], not a hover effect.
+   (The old rules only moved the knob on :hover and translated it a full
+   track-width, throwing it clear of the switch entirely, so the switch never
+   actually reflected the theme.) Both the offset and the press-scale are
+   custom properties, so they compose instead of overwriting each other, and
+   the single travel rule flips sign for RTL rather than being duplicated. */
 .theme-toggle {
-  --tt-size: 64px;
+  --tt-h: 30px;
+  --tt-w: calc(var(--tt-h) * 2.15);
+  --tt-pad: 3px;
+  --tt-knob: calc(var(--tt-h) - var(--tt-pad) * 2);
+  --tt-travel: calc(var(--tt-w) - var(--tt-knob) - var(--tt-pad) * 2);
   position: relative;
-  display: inline-block;
-  width: var(--tt-size);
-  height: calc(var(--tt-size) / 2);
+  display: block;
+  flex-shrink: 0;
+  width: var(--tt-w);
+  height: var(--tt-h);
+  padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--tt-track);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
-  padding: 0;
-  flex-shrink: 0;
-  transition: transform 0.18s var(--ease), border-color 0.18s var(--ease), box-shadow 0.18s var(--ease);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 .theme-toggle:hover { border-color: var(--accent); }
-.theme-toggle:hover .theme-toggle-thumb { transform: translateX(var(--tt-size)) scale(1.06); }
-.theme-toggle:active .theme-toggle-thumb { transform: translateX(var(--tt-size)) scale(0.95); }
 .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.theme-toggle-star {
+/* Decorative sky, parked on whichever half the knob has vacated. */
+.theme-toggle-stars {
   position: absolute;
-  top: 8px;
-  left: 13px;
-  width: 4px;
-  height: 4px;
+  inset-block-start: 10px;
+  inset-inline-end: 10px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
   background: var(--tt-star);
-  box-shadow: 12px 6px 0 -1px var(--tt-star), 5px 11px 0 -1px var(--tt-star),
-    11px 12px 0 -2px var(--tt-star);
+  box-shadow: -7px 5px 0 -1px var(--tt-star), -13px -1px 0 -1px var(--tt-star),
+    -4px -5px 0 -1px var(--tt-star);
   transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
 }
-
 .theme-toggle-cloud {
   position: absolute;
-  top: 9px;
-  left: 36px;
-  width: 14px;
-  height: 14px;
+  inset-block-start: 10px;
+  inset-inline-start: 11px;
+  width: 13px;
+  height: 13px;
   border-radius: 999px;
   background: #ffffff;
   opacity: 0;
-  transform: translateX(-8px) scale(0.5);
+  transform: translateY(4px) scale(0.5);
   transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
 }
 .theme-toggle-cloud::after {
   content: "";
   position: absolute;
-  top: -5px;
-  left: 4px;
-  width: 10px;
-  height: 10px;
+  inset-block-start: -4px;
+  inset-inline-start: 3px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: inherit;
 }
 
 .theme-toggle-thumb {
+  --tt-x: 0;
+  --tt-s: 1;
   position: absolute;
-  top: 2px;
-  inset-inline-start: 2px;
-  width: calc(var(--tt-size) / 2 - 6px);
-  height: calc(var(--tt-size) / 2 - 6px);
+  inset-block-start: var(--tt-pad);
+  inset-inline-start: var(--tt-pad);
+  width: var(--tt-knob);
+  height: var(--tt-knob);
   border-radius: 50%;
-  background: var(--tt-thumb);
+  background: var(--tt-thumb-bg);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  transition: transform 0.28s var(--ease);
+  transform: translateX(var(--tt-x)) scale(var(--tt-s));
+  transition: transform 0.34s var(--ease), background 0.3s var(--ease);
 }
+/* Light mode parks the knob at the end of the track. */
+:root[data-theme="light"] .theme-toggle-thumb { --tt-x: var(--tt-travel); }
+:root[dir="rtl"][data-theme="light"] .theme-toggle-thumb { --tt-x: calc(-1 * var(--tt-travel)); }
+.theme-toggle:hover .theme-toggle-thumb { --tt-s: 1.07; }
+.theme-toggle:active .theme-toggle-thumb { --tt-s: 0.92; }
+
 .theme-toggle-thumb::before,
 .theme-toggle-thumb::after {
   content: "";
   position: absolute;
-  top: 20%;
-  left: 20%;
-  width: 60%;
-  height: 60%;
+  inset: 20%;
   border-radius: 50%;
-  transition: opacity 0.3s var(--ease), transform 0.4s var(--ease);
+  transition: opacity 0.3s var(--ease), transform 0.42s var(--ease);
 }
 .theme-toggle-thumb::before {
   background: transparent;
   box-shadow: inset 4px -2px 0 1px #fdf6d8;
-  opacity: 0;
-  transform: scale(0.4) rotate(60deg);
+  opacity: 1;
 }
 .theme-toggle-thumb::after {
   background: radial-gradient(circle at 32% 30%, #fff9c9 0%, #ffd76e 42%, #ffab2e 100%);
-  opacity: 1;
-}
-
-:root[data-theme="light"] .theme-toggle {
-  box-shadow: inset 0 2px 6px rgba(22, 22, 46, 0.12);
-}
-:root[data-theme="light"] .theme-toggle-star {
-  opacity: 0;
-  transform: scale(0.3) rotate(90deg);
-}
-:root[data-theme="light"] .theme-toggle-cloud {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-}
-:root[data-theme="light"] .theme-toggle-thumb::before {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-:root[data-theme="light"] .theme-toggle-thumb::after {
   opacity: 0;
   transform: scale(0.4) rotate(-60deg);
 }
+:root[data-theme="light"] .theme-toggle { box-shadow: inset 0 2px 6px rgba(22, 22, 46, 0.12); }
+:root[data-theme="light"] .theme-toggle-stars { opacity: 0; transform: scale(0.3) rotate(90deg); }
+:root[data-theme="light"] .theme-toggle-cloud { opacity: 1; transform: translateY(0) scale(1); }
+:root[data-theme="light"] .theme-toggle-thumb::before { opacity: 0; transform: scale(0.4) rotate(60deg); }
+:root[data-theme="light"] .theme-toggle-thumb::after { opacity: 1; transform: scale(1) rotate(0); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -1021,13 +1103,82 @@ html[dir="rtl"] .notification.unread {
   border-left: 1px solid var(--border);
   border-right: 3px solid var(--accent);
 }
-html[dir="rtl"] .theme-toggle-thumb { inset-inline-start: auto; inset-inline-end: 2px; }
-html[dir="rtl"] .theme-toggle:hover .theme-toggle-thumb,
-html[dir="rtl"] .theme-toggle:active .theme-toggle-thumb {
-  transform: translateX(calc(-1 * var(--tt-size))) scale(1);
+
+/* ============================================================
+   Intrinsic-sizing guard
+   ------------------------------------------------------------
+   Prompt text, titles and bios are user content. A single unbreakable run
+   (a long URL, a pasted token, a CJK string) sets the min-content width of
+   its container, which in turn blows out any `1fr` grid track it sits in —
+   the whole page then scrolls sideways. `overflow-wrap: anywhere` (unlike
+   break-word) is accounted for during intrinsic sizing, so it fixes the
+   cause, not just the symptom. */
+.post-card-title,
+.prompt-preview p,
+.detail-title,
+.detail-desc,
+.profile-bio,
+.profile-name,
+.comment p,
+.prompt-box pre,
+.footer-tagline {
+  overflow-wrap: anywhere;
 }
-html[dir="rtl"] .theme-toggle:hover .theme-toggle-thumb { transform: translateX(calc(-1 * var(--tt-size))) scale(1.06); }
-html[dir="rtl"] .theme-toggle:active .theme-toggle-thumb { transform: translateX(calc(-1 * var(--tt-size))) scale(0.95); }
+
+/* User content is bilingual. Let each element pick its own base direction from
+   its first strong character instead of inheriting the page's: otherwise the
+   Persian UI reorders a Latin username ("@amir" paints as "amir@") and a long
+   one ellipsises at the visual start, giving "@…o_atlas". */
+.prompt-preview p,
+.post-card-title,
+.detail-title,
+.detail-desc,
+.profile-bio,
+.profile-name,
+.comment p,
+.prompt-box pre,
+.creator-name,
+.pl-audio-title,
+.pl-audio-sub {
+  unicode-bidi: plaintext;
+}
+
+.post-grid,
+.home-feed,
+.home-layout,
+.main {
+  min-width: 0;
+}
+
+/* Usernames must never take the same treatment: `anywhere` drops their
+   min-content to a single character, so a squeezed row renders a one-letter
+   column. Ellipsise them instead and keep the stats from shrinking. */
+.post-card-meta .creator-name,
+.comment-head .creator-name,
+.creator-info .creator-name {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* The ellipsis must cut the *end* of an LTR username, not whichever side
+     visual reordering happens to make last. */
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+.post-card-meta .creator,
+.comment-head { min-width: 0; }
+.post-card-meta .stats,
+.comment-head .comment-time { flex-shrink: 0; }
+
+/* Waveform used by audio cards in the grid. */
+.audio-wave {
+  width: 100%;
+  height: 34px;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.audio-preview { justify-content: center; gap: 0.9rem; }
 
 html[dir="rtl"] body { letter-spacing: 0; }
 html[dir="rtl"] .logo,
@@ -1037,9 +1188,1005 @@ html[dir="rtl"] .profile-name,
 html[dir="rtl"] .auth-card h1 { letter-spacing: 0; }
 
 @media (max-width: 640px) {
-  .theme-toggle { --tt-size: 56px; }
+  .theme-toggle { --tt-h: 26px; }
 }
 
 @media (max-width: 1024px) {
   .main { padding-bottom: 7rem; }
+}
+
+/* ============================================================
+   Round avatars everywhere (profile pictures)
+   ============================================================ */
+/* One reusable avatar shell: the initial sits underneath, the image
+   overlays it. A broken image hides itself and the initial shows through. */
+.avatar-shell { position: relative; }
+.avatar-shell .avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.avatar-shell .avatar-initial {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.creator-avatar img,
+.avatar img,
+.profile-avatar img,
+.bottom-avatar img,
+.comment-avatar,
+.notification-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.profile-avatar { overflow: hidden; background: var(--avatar-gradient); }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.creator-avatar { overflow: hidden; }
+.notification-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--avatar-gradient);
+  border: 1px solid var(--border-strong);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.notification-icon { width: auto; }
+
+/* ============================================================
+   Profile edit page
+   ============================================================ */
+.profile-edit-head { margin-bottom: 1.4rem; }
+.profile-edit { display: flex; flex-direction: column; gap: 1.2rem; max-width: 640px; }
+.edit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+.edit-card-title { margin: 0; font-size: 1.02rem; letter-spacing: -0.02em; }
+.edit-card-sub { margin: -0.4rem 0 0; font-size: 0.85rem; }
+.field-hint { color: var(--text-muted); font-size: 0.76rem; }
+.input-prefix-wrap { position: relative; display: flex; align-items: center; }
+.input-prefix {
+  position: absolute;
+  inset-inline-start: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  pointer-events: none;
+}
+.input-prefix-wrap input { padding-inline-start: 2.1rem; }
+
+/* Avatar editor */
+.edit-avatar-card { align-items: center; }
+.avatar-edit { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; width: 100%; }
+.edit-avatar-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #5f8bf6);
+  padding: 3px;
+}
+.edit-avatar-ring::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  opacity: 0;
+  transition: opacity 0.25s var(--ease);
+}
+.edit-avatar-ring:hover::before { opacity: 1; }
+.edit-avatar {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  color: #fff;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+.edit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.edit-avatar-change {
+  position: absolute;
+  bottom: 2px;
+  inset-inline-end: 2px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 0.16s var(--ease), background 0.16s var(--ease);
+}
+.edit-avatar-change:hover { transform: scale(1.08); background: var(--accent-hover); }
+.edit-avatar-change .icon { width: 16px; height: 16px; }
+.avatar-edit-actions { display: flex; gap: 0.5rem; }
+.profile-edit-link { margin-inline-start: auto; }
+
+/* Save bar */
+.edit-savebar {
+  position: sticky;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  padding: 0.8rem 1.1rem;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  z-index: 50;
+}
+.save-state { font-size: 0.84rem; }
+
+/* Password strength meter */
+.pw-strength { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem; }
+.pw-bar {
+  height: 4px;
+  flex: 1;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  transition: background 0.2s var(--ease);
+}
+.pw-bar.on[data-level="1"], .pw-bar.on[data-level="2"] { background: var(--danger); }
+.pw-bar.on[data-level="3"] { background: var(--save); }
+.pw-bar.on[data-level="4"] { background: var(--success); }
+.pw-label { font-size: 0.72rem; color: var(--text-muted); min-width: 4.5em; }
+
+/* ============================================================
+   Home layout + suggested users
+   ============================================================ */
+.home-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 1.8rem;
+  align-items: start;
+}
+.home-layout .home-feed { min-width: 0; }
+.feed-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.1rem;
+  padding: 0.6rem 0.95rem;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 0.84rem;
+}
+.feed-hint .icon { width: 15px; height: 15px; }
+.suggest-card {
+  position: sticky;
+  top: calc(var(--topbar-h) + 1rem);
+  padding: 1.1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.suggest-title {
+  margin: 0 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.suggest-list { display: flex; flex-direction: column; }
+.suggest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.2rem;
+}
+.suggest-user { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+.suggest-avatar { width: 38px; height: 38px; flex-shrink: 0; }
+.suggest-row .creator-info { display: flex; flex-direction: column; min-width: 0; }
+.suggest-row .creator-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggest-row .follow-btn { flex-shrink: 0; }
+
+@media (max-width: 1024px) {
+  /* minmax(0, …) not 1fr: a bare `1fr` track keeps an `auto` minimum, so it
+     grows to the content's min-content width and the grid overflows. */
+  .home-layout { grid-template-columns: minmax(0, 1fr); }
+  .home-suggestions { order: -1; }
+  /* Turn the rail into a card scroller: as a bare row, 190px was too tight
+     for avatar + name + post count + Follow, so the count wrapped onto two
+     lines and the button was clipped. */
+  .suggest-card {
+    position: static;
+    padding: 0 0 0.2rem;
+    background: transparent;
+    border: none;
+  }
+  .suggest-list {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(236px, 1fr);
+    gap: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+  .suggest-list::-webkit-scrollbar { display: none; }
+  .suggest-row {
+    scroll-snap-align: start;
+    padding: 0.55rem 0.7rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ============================================================
+   Comments with avatars
+   ============================================================ */
+.comment-row { display: flex; gap: 0.7rem; align-items: flex-start; }
+.comment-main { flex: 1; min-width: 0; }
+.comment-main .comment-head { margin-bottom: 0.15rem; }
+.comment-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.comment-avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--avatar-gradient);
+  border: 1px solid var(--border-strong);
+  color: var(--accent-hover);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   Custom media player
+   ============================================================ */
+.pl-wrapper {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: inherit;
+}
+.pl-video {
+  /* The clip's own shape, measured on loadedmetadata and clamped by JS, so
+     portrait and square video is never force-fitted into a 16:9 box. */
+  aspect-ratio: var(--pl-ratio, 16 / 9);
+  max-height: min(72vh, 640px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Portrait clips keep their height; the wrapper narrows instead of stretching. */
+.pl-video.is-portrait {
+  width: min(100%, calc(min(72vh, 640px) * var(--pl-ratio)));
+  margin-inline: auto;
+}
+.pl-video .pl-media { width: 100%; height: 100%; object-fit: contain; }
+.pl-wrapper.is-fullscreen { border-radius: 0; }
+.pl-wrapper:fullscreen { border-radius: 0; }
+
+.pl-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: rgba(0, 0, 0, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  transition: opacity 0.2s var(--ease);
+}
+.pl-overlay .icon { width: 62px; height: 62px; filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.5)); }
+.pl-overlay.is-hidden { opacity: 0; pointer-events: none; }
+.pl-wrapper.pl-idle { cursor: none; }
+.pl-wrapper.pl-idle .pl-controls { opacity: 0; transform: translateY(6px); }
+
+.pl-controls {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+  color: #fff;
+  transition: opacity 0.22s var(--ease), transform 0.22s var(--ease);
+}
+.pl-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  flex-shrink: 0;
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.pl-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.pl-btn:active { transform: scale(0.92); }
+.pl-btn .icon { width: 20px; height: 20px; }
+.pl-time { font-size: 0.74rem; font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.85); flex-shrink: 0; }
+
+.pl-progress {
+  position: relative;
+  flex: 1;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+  min-width: 60px;
+}
+.pl-buffer,
+.pl-track {
+  position: absolute;
+  inset-inline: 0;
+  height: 5px;
+  border-radius: 999px;
+}
+.pl-buffer { background: rgba(255, 255, 255, 0.22); width: 0; }
+.pl-track { background: rgba(255, 255, 255, 0.3); overflow: visible; }
+.pl-fill {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.pl-knob {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+html[dir="rtl"] .pl-knob { transform: translate(50%, -50%); }
+
+.pl-volume {
+  width: 74px;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+.pl-volume:focus { box-shadow: none; }
+@media (max-width: 640px) { .pl-volume { display: none; } }
+
+/* Playback speed — compact text button, matches .pl-btn geometry */
+.pl-speed {
+  width: auto;
+  min-width: 34px;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Loading + error states (shared by audio & video wrappers) */
+.pl-spinner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 2;
+}
+.pl-spinner::before {
+  content: "";
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--accent);
+  animation: pl-spin 0.8s linear infinite;
+}
+.pl-audio .pl-spinner::before {
+  width: 26px;
+  height: 26px;
+  border-width: 2px;
+  border-color: var(--border-strong);
+  border-top-color: var(--accent);
+}
+@keyframes pl-spin { to { transform: rotate(360deg); } }
+
+.pl-error {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 52px;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--danger-soft-bg);
+  border: 1px solid var(--danger-soft-border);
+  color: var(--danger-text);
+  font-size: 0.8rem;
+  z-index: 2;
+}
+.pl-audio .pl-error { bottom: auto; top: 0.6rem; }
+
+/* Audio player card */
+.pl-audio {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.pl-audio .pl-media { display: none; }
+.pl-audio-controls {
+  position: static;
+  background: var(--subtle-fill);
+  color: var(--text);
+  padding: 0.7rem 0.9rem;
+}
+.pl-audio-controls .pl-time { color: var(--text-secondary); }
+.pl-audio-controls .pl-btn { color: var(--text); }
+.pl-audio-controls .pl-btn:hover { background: var(--bg-hover); }
+.pl-audio-controls .pl-track { background: var(--bg-hover); }
+.pl-audio-controls .pl-buffer { background: transparent; }
+.pl-audio-controls .pl-knob { background: var(--accent); }
+
+.detail-audio-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.3rem 1.4rem 1.5rem;
+  background:
+    radial-gradient(120% 140% at 50% 0%, var(--prompt-glow) 0%, transparent 60%),
+    var(--bg-elevated);
+}
+/* The player brings its own card chrome everywhere else; inside this frame it
+   sits flat so we do not get a box inside a box. */
+.detail-audio-card .pl-wrapper.pl-audio {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.detail-audio-card .pl-audio-head { padding: 0 0 0.6rem; }
+.detail-audio-card .pl-audio-controls { background: transparent; padding: 0.6rem 0 0; }
+.audio-preview p { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+/* Fullscreen video sizing: the wrapper must fill the screen and drop the
+   intrinsic ratio it carried as a page player. */
+.pl-video:fullscreen,
+.pl-video:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+.pl-wrapper:fullscreen .pl-media,
+.pl-wrapper:-webkit-full-screen .pl-media {
+  width: 100%;
+  height: 100%;
+  max-height: 100vh;
+  object-fit: contain;
+}
+
+/* ============================================================
+   Accessibility primitives
+   ============================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 50%;
+  z-index: 400;
+  padding: 0.55rem 1.05rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-2);
+  transform: translate(-50%, -180%);
+  transition: transform 0.2s var(--ease);
+}
+.skip-link:focus { transform: translate(-50%, 0); }
+
+/* One visible focus treatment for every keyboard-reachable control. :where()
+   keeps specificity at zero so components can still refine their own ring. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* main only carries tabindex="-1" so the skip link can land on it. */
+#main:focus { outline: none; }
+
+/* ============================================================
+   Hamburger + navigation drawer
+   ============================================================ */
+body.nav-open { overflow: hidden; }
+
+.hamburger {
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.hamburger:hover { background: var(--bg-hover); color: var(--text); }
+.hamburger-box {
+  position: relative;
+  display: block;
+  width: 19px;
+  height: 13px;
+}
+.hamburger-bar {
+  position: absolute;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: width 0.22s var(--ease);
+}
+.hamburger-bar:nth-child(1) { top: 0; }
+.hamburger-bar:nth-child(2) { top: 50%; margin-top: -1px; width: 72%; }
+.hamburger-bar:nth-child(3) { bottom: 0; }
+.hamburger:hover .hamburger-bar:nth-child(2) { width: 100%; }
+
+@media (max-width: 1024px) { .hamburger { display: grid; } }
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(6, 6, 12, 0.55);
+  opacity: 0;
+  transition: opacity 0.24s var(--ease);
+}
+.nav-scrim.is-visible { opacity: 1; }
+
+.nav-drawer {
+  --drawer-off: -101%;
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 260;
+  width: min(86vw, 340px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  padding: 0.9rem 1rem calc(1.4rem + env(safe-area-inset-bottom));
+  background: var(--bg-elevated);
+  border-inline-end: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  visibility: hidden;
+  transform: translateX(var(--drawer-off));
+  transition: transform 0.28s var(--ease), visibility 0.28s var(--ease);
+}
+/* The drawer is anchored to the inline-start edge, so it hides to the right in RTL. */
+:root[dir="rtl"] .nav-drawer { --drawer-off: 101%; }
+.nav-drawer.is-open { visibility: visible; transform: translateX(0); }
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.drawer-close:hover { background: var(--bg-hover); color: var(--text); }
+
+.drawer-nav { display: flex; flex-direction: column; gap: 2px; }
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.drawer-link:hover { background: var(--bg-hover); color: var(--text); }
+.drawer-link.active {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+.drawer-count {
+  margin-inline-start: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 18px;
+}
+.drawer-avatar { width: 30px; height: 30px; }
+
+.drawer-section h4 {
+  margin: 0 0 0.6rem;
+  padding-inline-start: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.drawer-foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+.drawer-auth { display: flex; flex-direction: column; gap: 0.5rem; }
+.drawer-auth .btn { justify-content: center; }
+.drawer-prefs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+/* ============================================================
+   Site footer
+   ============================================================ */
+.site-footer {
+  margin-top: 3rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.footer-inner {
+  max-width: var(--main-max);
+  margin: 0 auto;
+  padding: 2.6rem 2rem 2rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr));
+  gap: 2.2rem 2rem;
+  align-items: start;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+.footer-tagline {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.footer-prefs { display: flex; gap: 0.5rem; }
+.footer-col { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.87rem; }
+.footer-col h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.footer-col a {
+  width: fit-content;
+  color: var(--text-secondary);
+  transition: color 0.16s var(--ease);
+}
+.footer-col a:hover { color: var(--accent-hover); }
+.footer-bottom {
+  max-width: var(--main-max);
+  margin: 0 auto;
+  padding: 0.9rem 2rem 1.2rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.footer-dot { opacity: 0.55; }
+
+@media (max-width: 1024px) {
+  .footer-inner {
+    /* Bottom padding here is what keeps the fixed bottom nav off the footer. */
+    padding: 2.2rem 1.2rem 1.6rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.8rem 1.4rem;
+  }
+  .footer-bottom { padding: 0.9rem 1.2rem calc(5.6rem + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 560px) {
+  .footer-inner { grid-template-columns: 1fr; gap: 1.6rem; }
+}
+
+/* ============================================================
+   Topbar responsiveness (keeps the bar from overflowing on phones)
+   ============================================================ */
+.topbar-avatar-link { display: inline-flex; border-radius: 50%; }
+
+@media (max-width: 720px) {
+  .topbar #lang-btn { display: none; }
+}
+@media (max-width: 560px) {
+  .topbar .btn-create,
+  .topbar-login { display: none; }
+}
+/* Last resort on very small phones: the drawer and footer still own a copy. */
+@media (max-width: 400px) {
+  .topbar .theme-toggle { display: none; }
+}
+
+/* ============================================================
+   Player: scrub feedback, speed control, audio card
+   ============================================================ */
+.pl-track { transition: height 0.14s var(--ease); }
+.pl-progress:hover .pl-track,
+.pl-progress.is-scrubbing .pl-track { height: 7px; }
+.pl-progress:hover .pl-knob,
+.pl-progress.is-scrubbing .pl-knob { width: 15px; height: 15px; }
+.pl-progress:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.pl-progress.is-scrubbing { cursor: grabbing; }
+
+/* Playback speed cycles on click — a popover would be clipped by the media
+   frame's overflow, and the whole control fits on one line this way. */
+.pl-speed { font-variant-numeric: tabular-nums; }
+
+.pl-audio-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1rem 0.35rem;
+}
+.pl-audio-meta { display: flex; flex-direction: column; min-width: 0; }
+.pl-audio-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-audio-sub { font-size: 0.76rem; color: var(--text-muted); }
+.pl-audio-head .pl-eq { margin-inline-start: auto; }
+
+/* Five bars that idle flat and dance while the track plays. */
+.pl-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.pl-eq i {
+  display: block;
+  width: 3px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.45;
+  transition: opacity 0.2s var(--ease), height 0.2s var(--ease);
+}
+.pl-eq i:nth-child(1) { height: 10px; }
+.pl-eq i:nth-child(2) { height: 18px; }
+.pl-eq i:nth-child(3) { height: 24px; }
+.pl-eq i:nth-child(4) { height: 14px; }
+.pl-eq i:nth-child(5) { height: 8px; }
+.pl-audio .pl-controls.is-playing .pl-eq i,
+.pl-audio-head .pl-eq i { animation: none; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i { opacity: 1; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i:nth-child(1) { animation: pl-eq 0.85s ease-in-out -0.1s infinite; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i:nth-child(2) { animation: pl-eq 0.7s ease-in-out -0.35s infinite; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i:nth-child(3) { animation: pl-eq 0.95s ease-in-out -0.2s infinite; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i:nth-child(4) { animation: pl-eq 0.65s ease-in-out -0.45s infinite; }
+.pl-wrapper.pl-audio:has(.pl-controls.is-playing) .pl-eq i:nth-child(5) { animation: pl-eq 0.8s ease-in-out -0.3s infinite; }
+@keyframes pl-eq {
+  0%, 100% { height: 6px; }
+  50% { height: 24px; }
+}
+
+@media (max-width: 560px) {
+  .pl-controls { padding: 0.45rem 0.55rem; gap: 0.35rem; }
+  .pl-controls .pl-pip,
+  .pl-controls .pl-speed { display: none; }
+  .pl-btn { width: 32px; height: 32px; }
+  .pl-audio-controls { padding: 0.6rem 0.7rem; }
+}
+
+/* ============================================================
+   Custom upload component (create post + profile edit)
+   ============================================================ */
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 2rem 1.25rem;
+  border: 1.5px dashed var(--border, rgba(128, 128, 160, 0.35));
+  border-radius: 14px;
+  background: var(--surface-2, rgba(128, 128, 160, 0.06));
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+.upload-zone:hover,
+.upload-zone:focus-visible {
+  border-color: var(--accent, #7c6cf4);
+  background: color-mix(in srgb, var(--accent, #7c6cf4) 8%, transparent);
+  outline: none;
+}
+.upload-zone.is-dragging {
+  border-color: var(--accent, #7c6cf4);
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent, #7c6cf4) 14%, transparent);
+  transform: scale(1.01);
+}
+.upload-zone.has-file {
+  padding: 0.9rem;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  border-style: solid;
+}
+.up-icon {
+  display: inline-flex;
+  color: var(--accent, #7c6cf4);
+}
+.up-icon .icon { width: 28px; height: 28px; }
+.upload-zone.has-file .up-icon .icon { width: 20px; height: 20px; }
+.up-hint { font-size: 0.92rem; font-weight: 600; }
+.upload-zone.has-file .up-hint { font-size: 0.85rem; opacity: 0.85; }
+.up-formats {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  text-transform: uppercase;
+}
+.upload-zone.has-file .up-formats { display: none; }
+
+.upload-preview { margin-top: 0.75rem; }
+.up-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.2rem;
+  min-width: 0;
+}
+.up-preview-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.up-preview-size { font-size: 0.75rem; opacity: 0.55; flex-shrink: 0; }
+.up-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-2, rgba(128, 128, 160, 0.12));
+  color: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.up-remove:hover { background: #e5484d; color: #fff; }
+.up-remove .icon { width: 15px; height: 15px; }
+
+.up-preview-frame {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-2, rgba(0, 0, 0, 0.2));
+  max-width: 100%;
+}
+.up-preview-frame img,
+.up-preview-frame video {
+  display: block;
+  width: 100%;
+  max-height: 380px;
+  object-fit: contain;
+}
+.up-preview-frame .pl-wrapper { max-width: 100%; }
+.upload-error { margin-top: 0.5rem; }
+
+/* Profile edit: the upload zone sits under the circular avatar preview */
+.avatar-edit .upload-zone { padding: 1.1rem 1rem; margin-top: 0.9rem; }
+.avatar-edit .upload-preview { display: none; } /* the ring itself is the preview */
+
+@media (max-width: 640px) {
+  .upload-zone { padding: 1.5rem 1rem; }
+  .up-preview-frame img,
+  .up-preview-frame video { max-height: 260px; }
 }

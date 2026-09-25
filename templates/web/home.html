@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% load web_extras %}
+{% block title %}Promptly — share and remix AI prompts{% endblock %}
+{% block description %}Discover AI prompts on Promptly: browse image, video and audio results, read the exact prompt behind each one, and remix it for your own projects.{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'web:home' %}">{% endblock %}
+
+{% block content %}
+<div class="feed-tabs">
+  <a class="tab {% if feed_tab == 'foryou' %}active{% endif %}" href="{% url 'web:home' %}" data-i18n="for_you">{{ i18n.for_you }}</a>
+  <a class="tab {% if feed_tab == 'latest' %}active{% endif %}" href="{% url 'web:feed' 'latest' %}" data-i18n="latest">{{ i18n.latest }}</a>
+  <a class="tab {% if feed_tab == 'following' %}active{% endif %}" href="{% url 'web:feed' 'following' %}" data-i18n="following">{{ i18n.following }}</a>
+  <a class="tab {% if feed_tab == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}" data-i18n="trending">{{ i18n.trending }}</a>
+</div>
+
+<div class="home-layout">
+  <div class="home-feed">
+    {% if is_recommended %}
+      <p class="feed-hint">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        <span data-i18n="recommended_hint">{{ i18n.recommended_hint }}</span>
+      </p>
+    {% endif %}
+    {% include "web/partials/post_grid.html" %}
+  </div>
+
+  {% if suggested_users %}
+    <aside class="home-suggestions">
+      <div class="suggest-card">
+        <h3 class="suggest-title" data-i18n="suggested_for_you">{{ i18n.suggested_for_you }}</h3>
+        <div class="suggest-list">
+          {% for suggested in suggested_users %}
+            <div class="suggest-row" data-suggest-username="{{ suggested.username }}">
+              <a class="suggest-user" href="{% url 'web:profile' suggested.username %}">
+                {% include "web/partials/avatar.html" with url=suggested.profile_picture name=suggested.display_name cls="avatar suggest-avatar" %}
+                <span class="creator-info">
+                  <span class="creator-name">
+                    {{ suggested.display_name }}
+                    {% if suggested.is_verified %}<span class="verified">✔</span>{% endif %}
+                  </span>
+                  <span class="muted">{{ i18n.post_count|fmt:suggested.post_count }}</span>
+                </span>
+              </a>
+              <button class="btn btn-outline btn-sm follow-btn"
+                      data-action="follow" data-username="{{ suggested.username }}">
+                {{ i18n.follow }}
+              </button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+  {% endif %}
+</div>
+{% endblock %}

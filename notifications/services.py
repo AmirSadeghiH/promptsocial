@@ -34,6 +34,11 @@ def serialize_notification(notification):
             "id": notification.actor_id,
             "username": notification.actor.username,
             "display_name": notification.actor.display_name or notification.actor.username,
+            "profile_picture": (
+                notification.actor.profile_picture.url
+                if notification.actor.profile_picture
+                else None
+            ),
         },
         "post": {"id": post.id, "title": post.title} if post else None,
         "comment": {"id": comment.id, "content": comment.content} if comment else None,

@@ -117,7 +117,7 @@ class ProfileApiTests(TestCase):
             {"biography": "nope"},
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 401)
 
     def test_owner_can_update_profile(self):
         self.client.force_login(self.user)
@@ -151,7 +151,7 @@ class SavedPostsApiTests(TestCase):
     def test_saved_posts_requires_login(self):
         response = self.client.get(reverse("account:saved-posts"))
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 401)
 
     def test_saved_posts_returns_saved_posts_newest_save_first(self):
         Save.objects.create(user=self.user, post=self.post_a)

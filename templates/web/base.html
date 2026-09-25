@@ -1,19 +1,49 @@
-{% load static %}<!DOCTYPE html>
+{% load static %}{% load web_extras %}<!DOCTYPE html>
 <html lang="{{ lang }}" dir="{{ dir }}" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f6f9">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0f">
-  <title>{% block title %}Promptly — Share AI Prompts{% endblock %}</title>
+  <meta name="format-detection" content="telephone=no">
+
+  <title>{% block title %}Promptly — share and remix AI prompts{% endblock %}</title>
+  <meta name="description" content="{% block description %}Promptly is a social network for AI prompt creators. Browse, save and remix image, video and audio results — and read the exact prompt behind every one.{% endblock %}">
+  {% block robots %}<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">{% endblock %}
+  {% block canonical %}<link rel="canonical" href="{{ request.build_absolute_uri }}">{% endblock %}
+
+  <meta property="og:site_name" content="Promptly">
+  <meta property="og:locale" content="{% if lang == 'fa' %}fa_IR{% else %}en_US{% endif %}">
+  <meta property="og:locale:alternate" content="{% if lang == 'fa' %}en_US{% else %}fa_IR{% endif %}">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}Promptly — share and remix AI prompts{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}A social network for AI prompt creators. Browse, save and remix image, video and audio prompts — and read the exact prompt behind every one.{% endblock %}">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512.png' %}{% endblock %}">
+  <meta property="og:image:alt" content="{% block og_image_alt %}Promptly{% endblock %}">
+  {% block og_image_dims %}<meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">{% endblock %}
+  <meta name="twitter:card" content="{% block twitter_card %}summary_large_image{% endblock %}">
+  <meta name="twitter:title" content="{% block twitter_title %}Promptly — share and remix AI prompts{% endblock %}">
+  <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512.png' %}{% endblock %}">
+
   <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
   <link rel="icon" href="{% static 'icons/icon-192.png' %}">
   <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+  <meta name="apple-mobile-web-app-title" content="Promptly">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap"
+        media="print" onload="this.media='all';this.onload=null">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap"></noscript>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+
   <script>
+    /* Theme must be resolved before first paint — no flash of the wrong mode. */
     (function () {
       function cookieTheme() {
         var m = document.cookie.match(/(?:^|;\s*)promptly-theme=(dark|light)(?:;|$)/);
@@ -28,73 +58,195 @@
       document.documentElement.setAttribute("data-theme", theme);
     })();
   </script>
+
+  {% block json_ld %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "{{ request.scheme }}://{{ request.get_host }}/#website",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
+        "name": "Promptly",
+        "description": "A social network for AI prompt creators — browse, save and remix prompts.",
+        "inLanguage": ["en", "fa"],
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}{% url 'web:search' %}?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+  {% endblock %}
+  {% comment %} Pages append their own entities (Article, Person, BreadcrumbList)
+  here so the site-level WebSite graph above is never lost. {% endcomment %}
+  {% block json_ld_extra %}{% endblock %}
+  {% block head_extra %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#main">{{ i18n.skip_to_content }}</a>
+
   <!-- ===== Top bar ===== -->
   <header class="topbar">
+    <button id="menu-btn" class="hamburger" type="button"
+            aria-label="{{ i18n.open_menu }}" aria-expanded="false" aria-controls="nav-drawer">
+      <span class="hamburger-box" aria-hidden="true">
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </span>
+    </button>
+
     <a class="logo" href="{% url 'web:home' %}">
-      <span class="logo-mark">◆</span>
+      <span class="logo-mark" aria-hidden="true">◆</span>
       <span class="logo-text">Promptly</span>
     </a>
 
     <form class="search" action="{% url 'web:search' %}" method="get" role="search">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" name="q" placeholder="{{ i18n.search_placeholder }}" value="{{ query|default:'' }}" autocomplete="off">
-      <kbd>/</kbd>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <label class="sr-only" for="site-search">{{ i18n.search_label }}</label>
+      <input id="site-search" type="search" name="q" placeholder="{{ i18n.search_placeholder }}"
+             value="{{ query|default:'' }}" autocomplete="off" enterkeyhint="search">
+      <kbd aria-hidden="true">/</kbd>
     </form>
 
-    <nav class="topbar-actions">
-      <button id="theme-toggle" class="theme-toggle" type="button"
-              aria-label="{{ i18n.toggle_theme }}" title="{{ i18n.toggle_theme }}"
-              aria-pressed="false">
-        <span class="theme-toggle-star" aria-hidden="true"></span>
-        <span class="theme-toggle-cloud" aria-hidden="true"></span>
-        <span class="theme-toggle-thumb" aria-hidden="true"></span>
-      </button>
+    <nav class="topbar-actions" aria-label="{{ i18n.primary_nav }}">
+      {% include "web/partials/theme_toggle.html" with id="theme-toggle" %}
 
-      <button id="lang-btn" class="lang-btn" type="button" aria-label="{{ i18n.switch_language }}">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 0 18 15.3 15.3 0 0 1 0-18z"/></svg>
+      <button id="lang-btn" class="lang-btn js-lang-toggle" type="button" aria-label="{{ i18n.switch_language }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 0 18 15.3 15.3 0 0 1 0-18z"/></svg>
         <span>{{ i18n.lang_switch_label }}</span>
       </button>
 
       {% if user.is_authenticated %}
         <a class="btn btn-primary btn-create" href="{% url 'web:create' %}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           <span data-i18n="create">{{ i18n.create }}</span>
         </a>
         <a class="icon-btn has-badge {% if unread_notifications %}show-badge{% endif %}" href="{% url 'web:notifications' %}" aria-label="{{ i18n.notifications }}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-          <span class="badge-dot" data-count="{{ unread_notifications }}"></span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="badge-dot" data-count="{{ unread_notifications }}" aria-hidden="true"></span>
         </a>
-        <a class="avatar" href="{% url 'web:profile' user.username %}" aria-label="{{ i18n.profile }}">
-          {% if user.profile_picture %}<img src="{{ user.profile_picture.url }}" alt="">
-          {% else %}<span>{{ user.username|first|upper }}</span>{% endif %}
+        <a class="topbar-avatar-link" href="{% url 'web:profile' user.username %}" aria-label="{{ i18n.profile }}">
+          {% include "web/partials/avatar.html" with url=user.profile_picture name=user.username cls="avatar" %}
         </a>
       {% else %}
-        <a class="btn btn-ghost" href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a>
+        <a class="btn btn-ghost topbar-login" href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a>
         <a class="btn btn-primary" href="{% url 'signup' %}" data-i18n="signup">{{ i18n.signup }}</a>
       {% endif %}
     </nav>
   </header>
 
+  <!-- ===== Mobile / tablet navigation drawer ===== -->
+  <div id="nav-scrim" class="nav-scrim" hidden></div>
+  <aside id="nav-drawer" class="nav-drawer" aria-label="{{ i18n.primary_nav }}" aria-hidden="true">
+    <div class="drawer-head">
+      <span class="logo">
+        <span class="logo-mark" aria-hidden="true">◆</span>
+        <span class="logo-text">Promptly</span>
+      </span>
+      <button class="drawer-close" id="menu-close" type="button" aria-label="{{ i18n.close_menu }}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <nav class="drawer-nav" aria-label="{{ i18n.primary_nav }}">
+      <a class="drawer-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'web:home' %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+        <span data-i18n="home">{{ i18n.home }}</span>
+      </a>
+      <a class="drawer-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" {% if request.resolver_match.url_name == 'explore' %}aria-current="page"{% endif %}>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+        <span data-i18n="explore">{{ i18n.explore }}</span>
+      </a>
+      <a class="drawer-link {% if request.resolver_match.url_name == 'feed' and request.resolver_match.kwargs.feed == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
+        <span data-i18n="trending">{{ i18n.trending }}</span>
+      </a>
+      <a class="drawer-link {% if request.resolver_match.url_name == 'feed' and request.resolver_match.kwargs.feed == 'latest' %}active{% endif %}" href="{% url 'web:feed' 'latest' %}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span data-i18n="latest">{{ i18n.latest }}</span>
+      </a>
+      <a class="drawer-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span data-i18n="saved">{{ i18n.saved }}</span>
+      </a>
+      {% if user.is_authenticated %}
+        <a class="drawer-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}" href="{% url 'web:notifications' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span data-i18n="notifications">{{ i18n.notifications }}</span>
+          {% if unread_notifications %}<span class="drawer-count">{{ unread_notifications }}</span>{% endif %}
+        </a>
+      {% endif %}
+    </nav>
+
+    {% if categories %}
+      <div class="drawer-section">
+        <h4 data-i18n="categories">{{ i18n.categories }}</h4>
+        <div class="chip-list">
+          {% for category in categories %}
+            <a class="chip" href="{% url 'web:category' category.slug %}">{{ category.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="drawer-foot">
+      {% if user.is_authenticated %}
+        <a class="drawer-link" href="{% url 'web:profile' user.username %}">
+          {% include "web/partials/avatar.html" with url=user.profile_picture name=user.username cls="avatar drawer-avatar" %}
+          {# dir=auto keeps a leading "@" from flipping to "name@" in RTL. #}
+          <span dir="auto">@{{ user.username }}</span>
+        </a>
+        <a class="drawer-link" href="{% url 'web:profile-edit' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-3-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.1-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 2.9 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.1 2.9h.2a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"/></svg>
+          <span data-i18n="edit_profile">{{ i18n.edit_profile }}</span>
+        </a>
+        <a class="drawer-link" href="{% url 'logout' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          <span data-i18n="logout">{{ i18n.logout }}</span>
+        </a>
+      {% else %}
+        <div class="drawer-auth">
+          <a class="btn btn-primary" href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a>
+          <a class="btn btn-outline" href="{% url 'signup' %}" data-i18n="signup">{{ i18n.signup }}</a>
+        </div>
+      {% endif %}
+
+      <div class="drawer-prefs">
+        {% include "web/partials/theme_toggle.html" with id="theme-toggle-drawer" %}
+        <button class="lang-btn js-lang-toggle" type="button" aria-label="{{ i18n.switch_language }}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 0 18 15.3 15.3 0 0 1 0-18z"/></svg>
+          <span>{{ i18n.lang_switch_label }}</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
   <div class="shell">
     <!-- ===== Sidebar (desktop) ===== -->
     <aside class="sidebar">
-      <nav class="sidenav">
-        <a class="sidenav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+      <nav class="sidenav" aria-label="{{ i18n.primary_nav }}">
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'web:home' %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
           <span data-i18n="home">{{ i18n.home }}</span>
         </a>
-        <a class="sidenav-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" {% if request.resolver_match.url_name == 'explore' %}aria-current="page"{% endif %}>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
           <span data-i18n="explore">{{ i18n.explore }}</span>
         </a>
-        <a class="sidenav-link {% if request.resolver_match.url_name == 'category' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'feed' and request.resolver_match.kwargs.feed == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
           <span data-i18n="trending">{{ i18n.trending }}</span>
         </a>
         <a class="sidenav-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
           <span data-i18n="saved">{{ i18n.saved }}</span>
         </a>
       </nav>
@@ -110,12 +262,11 @@
 
       <footer class="sidebar-footer">
         <span data-i18n="sidebar_tagline">{{ i18n.sidebar_tagline }}</span>
-        <button id="lang-btn-footer" class="lang-btn" type="button" aria-label="{{ i18n.switch_language }}" style="margin-top:0.6rem">{{ i18n.lang_switch_label }}</button>
       </footer>
     </aside>
 
     <!-- ===== Main ===== -->
-    <main class="main">
+    <main class="main" id="main" tabindex="-1">
       {% if messages %}
         {% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
       {% endif %}
@@ -123,33 +274,100 @@
     </main>
   </div>
 
+  <!-- ===== Site footer ===== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo">
+          <span class="logo-mark" aria-hidden="true">◆</span>
+          <span class="logo-text">Promptly</span>
+        </span>
+        <p class="footer-tagline" data-i18n="footer_tagline">{{ i18n.footer_tagline }}</p>
+        <div class="footer-prefs">
+          {% include "web/partials/theme_toggle.html" with id="theme-toggle-footer" %}
+          <button class="lang-btn js-lang-toggle" type="button" aria-label="{{ i18n.switch_language }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:15px;height:15px"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 0 18 15.3 15.3 0 0 1 0-18z"/></svg>
+            <span>{{ i18n.lang_switch_label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <nav class="footer-col" aria-labelledby="footer-explore">
+        <h4 id="footer-explore" data-i18n="footer_explore">{{ i18n.footer_explore }}</h4>
+        <a href="{% url 'web:home' %}" data-i18n="home">{{ i18n.home }}</a>
+        <a href="{% url 'web:explore' %}" data-i18n="explore">{{ i18n.explore }}</a>
+        <a href="{% url 'web:feed' 'trending' %}" data-i18n="trending">{{ i18n.trending }}</a>
+        <a href="{% url 'web:feed' 'latest' %}" data-i18n="latest">{{ i18n.latest }}</a>
+      </nav>
+
+      {% if categories %}
+        {# Pages that build their own context (login, signup) pass no categories. #}
+        <nav class="footer-col" aria-labelledby="footer-categories">
+          <h4 id="footer-categories" data-i18n="categories">{{ i18n.categories }}</h4>
+          {% for category in categories|slice:":6" %}
+            <a href="{% url 'web:category' category.slug %}">{{ category.name }}</a>
+          {% endfor %}
+        </nav>
+      {% endif %}
+
+      <nav class="footer-col" aria-labelledby="footer-account">
+        <h4 id="footer-account" data-i18n="footer_account">{{ i18n.footer_account }}</h4>
+        <a href="{% url 'web:create' %}" data-i18n="share_a_prompt">{{ i18n.share_a_prompt }}</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'web:profile' user.username %}" data-i18n="profile">{{ i18n.profile }}</a>
+          <a href="{% url 'web:saved' %}" data-i18n="saved">{{ i18n.saved }}</a>
+          <a href="{% url 'web:profile-edit' %}" data-i18n="edit_profile">{{ i18n.edit_profile }}</a>
+        {% else %}
+          <a href="{% url 'login' %}" data-i18n="login">{{ i18n.login }}</a>
+          <a href="{% url 'signup' %}" data-i18n="signup">{{ i18n.signup }}</a>
+        {% endif %}
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© {% now "Y" %} Promptly</span>
+      <span class="footer-dot" aria-hidden="true">·</span>
+      <span data-i18n="footer_rights">{{ i18n.footer_rights }}</span>
+    </div>
+  </footer>
+
   <!-- ===== Bottom nav (mobile) ===== -->
-  <nav class="bottom-nav">
-    <a class="bottom-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'feed' %}active{% endif %}" href="{% url 'web:home' %}" aria-label="{{ i18n.home }}">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+  <nav class="bottom-nav" aria-label="{{ i18n.primary_nav }}">
+    <a class="bottom-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'web:home' %}" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
       <span data-i18n="home">{{ i18n.home }}</span>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" aria-label="{{ i18n.explore }}">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
+    <a class="bottom-link {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" href="{% url 'web:explore' %}" {% if request.resolver_match.url_name == 'explore' %}aria-current="page"{% endif %}>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
       <span data-i18n="explore">{{ i18n.explore }}</span>
     </a>
     <a class="bottom-create" href="{% url 'web:create' %}" aria-label="{{ i18n.create }}">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}" aria-label="{{ i18n.saved }}">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <a class="bottom-link {% if request.resolver_match.url_name == 'saved' %}active{% endif %}" href="{% url 'web:saved' %}" {% if request.resolver_match.url_name == 'saved' %}aria-current="page"{% endif %}>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21 12 16 5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
       <span data-i18n="saved">{{ i18n.saved }}</span>
     </a>
-    <a class="bottom-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% if user.is_authenticated %}{% url 'web:profile' user.username %}{% else %}{% url 'login' %}{% endif %}" aria-label="{{ i18n.profile }}">
-      {% if user.is_authenticated %}<span class="bottom-avatar">{{ user.username|first|upper }}</span><span data-i18n="profile">{{ i18n.profile }}</span>
-      {% else %}<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg><span data-i18n="login">{{ i18n.login }}</span>{% endif %}
+    <a class="bottom-link {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'profile-edit' %}active{% endif %}"
+       href="{% if user.is_authenticated %}{% url 'web:profile' user.username %}{% else %}{% url 'login' %}{% endif %}"
+       {% if request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'profile-edit' %}aria-current="page"{% endif %}
+       aria-label="{{ i18n.profile }}">
+      {% if user.is_authenticated %}
+        {% include "web/partials/avatar.html" with url=user.profile_picture name=user.username cls="bottom-avatar" %}
+        <span data-i18n="profile">{{ i18n.profile }}</span>
+      {% else %}
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+        <span data-i18n="login">{{ i18n.login }}</span>
+      {% endif %}
     </a>
   </nav>
 
-  <div id="toast" class="toast" role="status"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script>window.PROMPTLY_LANG = "{{ lang }}";</script>
   <script src="{% static 'js/i18n.js' %}" defer></script>
   <script src="{% static 'js/theme.js' %}" defer></script>
+  <script src="{% static 'js/nav.js' %}" defer></script>
+  <script src="{% static 'js/player.js' %}" defer></script>
   <script src="{% static 'js/app.js' %}" defer></script>
   {% block scripts %}{% endblock %}
 </body>

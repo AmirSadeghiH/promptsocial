@@ -89,6 +89,59 @@
       share_first_prompt: "Share your first prompt",
       post_count: "{n} posts",
       level_n: "Level {n}",
+      // Profile edit
+      edit_profile: "Edit profile",
+      view_profile: "View profile",
+      display_name: "Display name",
+      display_name_placeholder: "How should we call you?",
+      biography: "Biography",
+      biography_placeholder: "Tell the community about yourself…",
+      account_info: "Account info",
+      username_hint: "3–150 chars: letters, numbers and _ . + - @",
+      change_photo: "Change photo",
+      remove_photo: "Remove photo",
+      save_changes: "Save changes",
+      saving: "Saving…",
+      saved_check: "Saved ✓",
+      current_password: "Current password",
+      new_password: "New password",
+      confirm_password: "Confirm new password",
+      update_password: "Update password",
+      change_password_hint: "Use at least 8 characters with a mix of letters and numbers.",
+      pw_weak: "Weak",
+      pw_fair: "Fair",
+      pw_good: "Good",
+      pw_strong: "Strong",
+      // Home feed
+      recommended_hint: "Tuned for you — based on what you like, save and follow.",
+      suggested_for_you: "Suggested for you",
+      // Player
+      player_play: "Play",
+      player_pause: "Pause",
+      player_mute: "Mute",
+      player_unmute: "Unmute",
+      player_fullscreen: "Fullscreen",
+      player_speed: "Playback speed",
+      player_error: "This media could not be loaded.",
+      player_seek: "Seek",
+      player_volume: "Volume",
+      player_pip: "Picture in picture",
+      player_normal: "Normal",
+      // Chrome: navigation, menus, footer
+      primary_nav: "Primary",
+      skip_to_content: "Skip to content",
+      search_label: "Search prompts",
+      open_menu: "Open menu",
+      close_menu: "Close menu",
+      logout: "Log out",
+      like_action: "Like",
+      save_action: "Save",
+      theme_to_light: "Switch to light mode",
+      theme_to_dark: "Switch to dark mode",
+      footer_tagline: "A network for prompt creators — see the result, read the prompt, remix it.",
+      footer_explore: "Explore",
+      footer_account: "Your account",
+      footer_rights: "All rights reserved.",
       // JS-side dynamic strings
       saved_toast: "Saved 🔖",
       removed_from_saved: "Removed from saved",
@@ -103,6 +156,28 @@
       publish_error: "Could not publish. Check your input and try again.",
       caught_up_toast: "All caught up ✨",
       delete: "Delete",
+      profile_saved: "Profile updated",
+      password_changed: "Password changed",
+      passwords_mismatch: "New passwords do not match.",
+      fill_password_fields: "Fill in both password fields.",
+      invalid_image_type: "Please choose a JPG, PNG, WebP or GIF image.",
+      image_too_large: "Image is too large (max 10 MB).",
+      upload_media: "Upload media",
+      upload_drop: "Drag & drop or click to choose a file",
+      media_label: "Media",
+      upload_image: "Upload image",
+      upload_video: "Upload video",
+      upload_audio: "Upload audio",
+      upload_bad_type: "File type not allowed. Allowed:",
+      upload_too_large: "File is too large.",
+      upload_max_image: "Maximum 10 MB.",
+      upload_max_video: "Maximum 200 MB.",
+      upload_max_audio: "Maximum 30 MB.",
+      remove_file: "Remove file",
+      prompt_required: "The prompt text is required for a prompt post.",
+      media_required_image: "Choose an image for this post.",
+      media_required_video: "Choose a video for this post.",
+      media_required_audio: "Choose an audio file for this post.",
       verified: "Verified",
       // date formatting
       date_locale: "en-US",
@@ -193,6 +268,59 @@
       share_first_prompt: "اولین پرامپت خود را به اشتراک بگذارید",
       post_count: "{n} پست",
       level_n: "سطح {n}",
+      // Profile edit
+      edit_profile: "ویرایش پروفایل",
+      view_profile: "مشاهده پروفایل",
+      display_name: "نام نمایشی",
+      display_name_placeholder: "چطور صدایتان کنیم؟",
+      biography: "بیوگرافی",
+      biography_placeholder: "خودتان را به جامعه معرفی کنید…",
+      account_info: "اطلاعات حساب",
+      username_hint: "۳ تا ۱۵۰ نویسه: حروف، اعداد و _ . + - @",
+      change_photo: "تغییر عکس",
+      remove_photo: "حذف عکس",
+      save_changes: "ذخیره تغییرات",
+      saving: "در حال ذخیره…",
+      saved_check: "ذخیره شد ✓",
+      current_password: "گذرواژه فعلی",
+      new_password: "گذرواژه جدید",
+      confirm_password: "تکرار گذرواژه جدید",
+      update_password: "به‌روزرسانی گذرواژه",
+      change_password_hint: "حداقل ۸ کاراکتر با ترکیبی از حروف و اعداد.",
+      pw_weak: "ضعیف",
+      pw_fair: "متوسط",
+      pw_good: "خوب",
+      pw_strong: "قوی",
+      // Home feed
+      recommended_hint: "مخصوص شما — بر اساس لایک‌ها، ذخیره‌ها و دنبال‌کردن‌هایتان.",
+      suggested_for_you: "پیشنهاد برای شما",
+      // Player
+      player_play: "پخش",
+      player_pause: "توقف",
+      player_mute: "بی‌صدا",
+      player_unmute: "با صدا",
+      player_fullscreen: "تمام‌صفحه",
+      player_speed: "سرعت پخش",
+      player_error: "بارگیری این رسانه ممکن نشد.",
+      player_seek: "جابه‌جایی زمان",
+      player_volume: "صدا",
+      player_pip: "تصویر در تصویر",
+      player_normal: "معمولی",
+      // Chrome: navigation, menus, footer
+      primary_nav: "ناوبری اصلی",
+      skip_to_content: "پرش به محتوا",
+      search_label: "جستجوی پرامپت‌ها",
+      open_menu: "باز کردن منو",
+      close_menu: "بستن منو",
+      logout: "خروج",
+      like_action: "پسندیدن",
+      save_action: "ذخیره",
+      theme_to_light: "تغییر به حالت روز",
+      theme_to_dark: "تغییر به حالت شب",
+      footer_tagline: "شبکه‌ای برای سازندگان پرامپت — نتیجه را ببین، پرامپت را بخوان و آن را از نو بساز.",
+      footer_explore: "کاوش",
+      footer_account: "حساب من",
+      footer_rights: "همه حقوق محفوظ است.",
       // JS-side dynamic strings
       saved_toast: "ذخیره شد 🔖",
       removed_from_saved: "از ذخیره‌شده‌ها حذف شد",
@@ -207,6 +335,28 @@
       publish_error: "انتشار ممکن نشد. ورودی خود را بررسی کنید.",
       caught_up_toast: "همه خوانده شد ✨",
       delete: "حذف",
+      profile_saved: "پروفایل به‌روزرسانی شد",
+      password_changed: "گذرواژه تغییر کرد",
+      passwords_mismatch: "گذرواژه‌های جدید یکسان نیستند.",
+      fill_password_fields: "هر دو فیلد گذرواژه را پر کنید.",
+      invalid_image_type: "لطفاً تصویری از نوع JPG، PNG، WebP یا GIF انتخاب کنید.",
+      image_too_large: "حجم تصویر بیش از حد مجاز است (حداکثر ۱۰ مگابایت).",
+      upload_media: "بارگذاری رسانه",
+      upload_drop: "فایل را بکشید و رها کنید یا کلیک کنید",
+      media_label: "رسانه",
+      upload_image: "بارگذاری تصویر",
+      upload_video: "بارگذاری ویدیو",
+      upload_audio: "بارگذاری صدا",
+      upload_bad_type: "نوع فایل مجاز نیست. فرمت‌های مجاز:",
+      upload_too_large: "حجم فایل بیش از حد مجاز است.",
+      upload_max_image: "حداکثر ۱۰ مگابایت.",
+      upload_max_video: "حداکثر ۲۰۰ مگابایت.",
+      upload_max_audio: "حداکثر ۳۰ مگابایت.",
+      remove_file: "حذف فایل",
+      prompt_required: "متن پرامپت برای پست پرامپتی الزامی است.",
+      media_required_image: "برای این پست یک تصویر انتخاب کنید.",
+      media_required_video: "برای این پست یک ویدیو انتخاب کنید.",
+      media_required_audio: "برای این پست یک فایل صوتی انتخاب کنید.",
       verified: "تأییدشده",
       // date formatting
       date_locale: "fa-IR",
@@ -259,12 +409,11 @@
     var searchInput = document.querySelector(".search input");
     if (searchInput) searchInput.placeholder = t("search_placeholder");
 
-    document.querySelectorAll("#theme-toggle").forEach(function (btn) {
-      btn.setAttribute("aria-label", t("toggle_theme"));
-      btn.setAttribute("title", t("toggle_theme"));
-    });
+    // The theme switch labels itself from theme.js (it names the *action*,
+    // not the concept), and re-labels on the promptly:langchange event.
 
-    document.querySelectorAll("#lang-btn, #lang-btn-footer").forEach(function (btn) {
+    // Every language toggle: topbar, drawer and footer all share the class.
+    document.querySelectorAll(".js-lang-toggle").forEach(function (btn) {
       var span = btn.querySelector("span");
       if (span) span.textContent = t("lang_switch_label");
       btn.setAttribute("aria-label", t("switch_language"));
@@ -277,6 +426,11 @@
     applyStatic();
     if (typeof global.promptlyApplyPageI18n === "function") global.promptlyApplyPageI18n();
     window.dispatchEvent(new CustomEvent("promptly:langchange", { detail: { lang: currentLang } }));
+    // Chrome text above is translated client-side, but every server-rendered
+    // string (post titles, categories, follow buttons, dates) exists only in
+    // the page's render language. Reload so Django re-renders the whole page;
+    // persist() already wrote the cookie the context processor reads.
+    window.location.reload();
   }
 
   var currentLang = "en";
@@ -300,7 +454,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     api.init();
-    document.querySelectorAll("#lang-btn, #lang-btn-footer").forEach(function (btn) {
+    document.querySelectorAll(".js-lang-toggle").forEach(function (btn) {
       btn.addEventListener("click", function () { api.toggle(); });
     });
   });

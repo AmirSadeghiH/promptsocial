@@ -1,6 +1,10 @@
 {% extends "web/base.html" %}
 {% load web_extras %}
 {% block title %}{{ i18n.search_title }} · Promptly{% endblock %}
+{% comment %} Query URLs are infinite thin duplicates — keep them out of the index
+and point every result set at the bare search page instead. {% endcomment %}
+{% block robots %}<meta name="robots" content="noindex, follow">{% endblock %}
+{% block canonical %}<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'web:search' %}">{% endblock %}
 
 {% block content %}
 <h1 class="page-title">

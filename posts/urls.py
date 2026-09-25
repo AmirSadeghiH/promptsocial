@@ -8,6 +8,7 @@ urlpatterns = [
     path("feed/latest/", views.feed_latest, name="feed-latest"),
     path("feed/following/", views.feed_following, name="feed-following"),
     path("feed/trending/", views.feed_trending, name="feed-trending"),
+    path("feed/recommended/", views.feed_recommended, name="feed-recommended"),
     path("explore/", views.explore, name="explore"),
     path("search/", views.search, name="search"),
     path("categories/", views.category_list, name="categories"),

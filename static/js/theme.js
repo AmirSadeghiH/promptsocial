@@ -1,11 +1,29 @@
-/* Promptly theme — dark ⇄ light with persistence and system preference */
+/* Promptly theme — dark ⇄ light with persistence and system preference.
+   The switch itself is a sliding sun/moon drawn purely in CSS from
+   html[data-theme]; this module owns state, persistence, the <meta
+   theme-color> tags and the accessible labelling of every copy. */
 (function (global) {
   "use strict";
 
   var THEME_KEY = "promptly-theme";
-  var META_NAME = "theme-color";
   var DARK_BG = "#0a0a0f";
   var LIGHT_BG = "#f6f6f9";
+
+  /* Fallbacks so labels are never raw keys before i18n.js boots. */
+  var FALLBACK_LABELS = {
+    en: { theme_to_light: "Switch to light mode", theme_to_dark: "Switch to dark mode" },
+    fa: { theme_to_light: "تغییر به حالت روز", theme_to_dark: "تغییر به حالت شب" },
+  };
+
+  function label(key) {
+    var i18n = global.PromptlyI18n;
+    if (i18n) {
+      var value = i18n.t(key);
+      if (value && value !== key) return value;
+    }
+    var lang = document.documentElement.getAttribute("lang") === "fa" ? "fa" : "en";
+    return FALLBACK_LABELS[lang][key] || FALLBACK_LABELS.en[key];
+  }
 
   function readStored() {
     try {
@@ -13,6 +31,11 @@
       if (t === "dark" || t === "light") return t;
     } catch (e) {}
     return null;
+  }
+
+  function cookieTheme() {
+    var m = document.cookie.match(/(?:^|;\s*)promptly-theme=(dark|light)(?:;|$)/);
+    return m ? m[1] : null;
   }
 
   function systemTheme() {
@@ -26,29 +49,41 @@
   }
 
   function updateMeta(theme) {
-    var meta = document.querySelector('meta[name="' + META_NAME + '"]');
-    if (meta) meta.setAttribute("content", theme === "light" ? LIGHT_BG : DARK_BG);
+    // Two media-scoped tags exist; update whichever matches the live theme.
+    var wanted = theme === "light" ? LIGHT_BG : DARK_BG;
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      var scoped = meta.getAttribute("media") || "";
+      var isLight = scoped.indexOf("light") !== -1;
+      var isDark = scoped.indexOf("dark") !== -1;
+      if ((isLight && theme === "light") || (isDark && theme === "dark") || (!isLight && !isDark)) {
+        meta.setAttribute("content", wanted);
+      }
+    });
   }
 
-  function syncToggleState() {
-    var btn = document.getElementById("theme-toggle");
-    if (!btn) return;
+  function syncToggles() {
     var theme = currentTheme();
-    btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+    var nextKey = theme === "light" ? "theme_to_dark" : "theme_to_light";
+    var text = label(nextKey);
+    document.querySelectorAll(".js-theme-toggle").forEach(function (btn) {
+      // aria-pressed reflects "light mode is on" so state is machine-readable.
+      btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+      btn.setAttribute("aria-label", text);
+      btn.setAttribute("title", text);
+    });
   }
 
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     updateMeta(theme);
-    syncToggleState();
+    syncToggles();
   }
 
   function setTheme(theme, persist) {
     apply(theme);
     if (persist !== false) {
       try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
-      document.cookie =
-        THEME_KEY + "=" + theme + "; path=/; max-age=31536000; samesite=Lax";
+      document.cookie = THEME_KEY + "=" + theme + "; path=/; max-age=31536000; samesite=Lax";
     }
   }
 
@@ -58,18 +93,21 @@
 
   var api = {
     init: function () {
-      // The inline <head> script already applied the correct theme before paint;
-      // this re-asserts it and syncs the toggle's ARIA state.
-      var theme = readStored() || systemTheme();
-      apply(theme);
+      // An explicit choice (localStorage OR cookie) must always beat the system
+      // preference — a cookie-only choice used to be clobbered on load.
+      apply(readStored() || cookieTheme() || systemTheme());
 
-      var btn = document.getElementById("theme-toggle");
-      if (btn) btn.addEventListener("click", toggle);
+      document.querySelectorAll(".js-theme-toggle").forEach(function (btn) {
+        btn.addEventListener("click", toggle);
+      });
+
+      // Re-label after a language switch so the switch reads in the new locale.
+      global.addEventListener("promptly:langchange", syncToggles);
 
       if (global.matchMedia) {
         var mq = global.matchMedia("(prefers-color-scheme: light)");
         var onChange = function (e) {
-          if (!readStored()) apply(e.matches ? "light" : "dark");
+          if (!readStored() && !cookieTheme()) apply(e.matches ? "light" : "dark");
         };
         if (mq.addEventListener) mq.addEventListener("change", onChange);
         else if (mq.addListener) mq.addListener(onChange);
@@ -82,7 +120,5 @@
 
   global.PromptlyTheme = api;
 
-  document.addEventListener("DOMContentLoaded", function () {
-    api.init();
-  });
+  document.addEventListener("DOMContentLoaded", api.init);
 })(window);

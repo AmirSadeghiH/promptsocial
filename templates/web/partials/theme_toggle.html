@@ -1,0 +1,16 @@
+{% comment %}
+Weather switch: the one memorable control in the chrome. Every copy carries
+.js-theme-toggle, so theme.js wires and re-labels all of them.
+
+Param: id — REQUIRED and unique. The topbar, drawer and footer each render a
+copy, and duplicate ids would break both a11y and the label lookup.
+
+Note: use a block comment for notes like this. A `{# ... #}` comment is
+single-line only — wrapping one across two lines renders it as visible text.
+{% endcomment %}
+<button id="{{ id }}" class="theme-toggle js-theme-toggle" type="button"
+        aria-label="{{ i18n.toggle_theme }}" title="{{ i18n.toggle_theme }}" aria-pressed="false">
+  <span class="theme-toggle-stars" aria-hidden="true"></span>
+  <span class="theme-toggle-cloud" aria-hidden="true"></span>
+  <span class="theme-toggle-thumb" aria-hidden="true"></span>
+</button>

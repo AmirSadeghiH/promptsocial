@@ -118,6 +118,9 @@ def create_comment(request, post_id):
                 "id": request.user.pk,
                 "username": request.user.username,
                 "display_name": request.user.display_name or request.user.username,
+                "profile_picture": (
+                    request.user.profile_picture.url if request.user.profile_picture else None
+                ),
             },
             "comment_count": post.comments.count(),
         },
@@ -164,6 +167,11 @@ def list_comments(request, post_id):
                         "id": comment.user_id,
                         "username": comment.user.username,
                         "display_name": comment.user.display_name or comment.user.username,
+                        "profile_picture": (
+                            comment.user.profile_picture.url
+                            if comment.user.profile_picture
+                            else None
+                        ),
                     },
                 }
                 for comment in comments

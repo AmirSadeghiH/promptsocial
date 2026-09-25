@@ -1,5 +1,6 @@
 {% extends "web/base.html" %}
 {% block title %}{{ i18n.notifications }} · Promptly{% endblock %}
+{% block robots %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block content %}
 <div class="page-head">
@@ -10,9 +11,9 @@
 <ul class="notification-list" data-unread-count="{{ unread_notifications }}">
   {% for n in notifications %}
     <li class="notification {% if not n.is_read %}unread{% endif %}" data-id="{{ n.id }}">
-      <span class="notification-icon type-{{ n.type }}">
-        {% if n.type == "like" %}♥{% elif n.type == "save" %}🔖{% elif n.type == "comment" %}💬{% else %}➕{% endif %}
-      </span>
+      <a href="{% url 'web:profile' n.actor.username %}">
+        {% include "web/partials/avatar.html" with url=n.actor.profile_picture name=n.actor.display_name cls="notification-avatar" %}
+      </a>
       <div class="notification-body">
         <p>
           <a class="creator-name" href="{% url 'web:profile' n.actor.username %}">@{{ n.actor.username }}</a>

@@ -10,6 +10,8 @@ urlpatterns = [
     path("auth/logout/", views.api_logout, name="logout"),
     path("auth/me/", views.me, name="me"),
     path("me/update/", views.profile_update, name="profile-update"),
+    path("me/profile/", views.profile_update_multipart, name="profile-multipart"),
+    path("me/password/", views.change_password, name="change-password"),
     path("me/saved/", views.saved_posts, name="saved-posts"),
     path("users/<str:username>/", views.profile_detail, name="profile-detail"),
 ]

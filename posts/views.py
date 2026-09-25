@@ -1,7 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -9,6 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from posts.models import Category, Post, Tag
+from posts.recommendations import get_recommended_feed
+from posts.validation import validate_post_media
 from posts.services import (
     InvalidCursor,
     get_explore_data,
@@ -74,6 +76,25 @@ def feed_following(request):
 
 def feed_trending(request):
     return _feed_response(request, get_trending_feed)
+
+
+def feed_recommended(request):
+    """Personalized "For You" feed backing the home page's infinite scroll."""
+    if request.method != "GET":
+        return _method_not_allowed()
+
+    cursor, page_size, error_response = _get_pagination_params(request)
+    if error_response:
+        return error_response
+
+    user = request.user if request.user.is_authenticated else None
+    try:
+        page = get_recommended_feed(
+            user=user, cursor=cursor, page_size=page_size, viewer=user
+        )
+    except InvalidCursor:
+        return JsonResponse({"error": "Invalid cursor."}, status=400)
+    return JsonResponse(page)
 
 
 def explore(request):
@@ -184,6 +205,49 @@ def _parse_json_body(request):
     return data
 
 
+MEDIA_FIELD_BY_TYPE = {"image": "image", "video": "video", "audio": "audio"}
+
+
+def _validate_media_for_type(post_type, media):
+    """Enforce that a post's media matches its declared type.
+
+    Rules:
+      - a "prompt" post may not carry any media file;
+      - an image/video/audio post must carry exactly its own media field;
+      - no post may carry more than one media file (a video post can't also
+        have an image riding along under another field name).
+    Returns a JsonResponse on violation, else None.
+    """
+    expected = MEDIA_FIELD_BY_TYPE.get(post_type)
+    attached = [name for name, file in media.items() if file]
+
+    if expected is None:
+        if attached:
+            return JsonResponse(
+                {"errors": {"media": "Prompt posts cannot include media files."}},
+                status=400,
+            )
+        return None
+
+    unexpected = [name for name in attached if name != expected]
+    if unexpected:
+        return JsonResponse(
+            {"errors": {"media": f"A {post_type} post only accepts a {expected} file."}},
+            status=400,
+        )
+    if expected not in attached:
+        return JsonResponse(
+            {"errors": {"media": f"A {post_type} post requires a {expected} file."}},
+            status=400,
+        )
+
+    try:
+        validate_post_media(**{expected: media[expected]})
+    except ValidationError as exc:
+        return JsonResponse({"errors": {"media": "; ".join(exc.messages)}}, status=400)
+    return None
+
+
 def _validate_post_payload(data, *, partial=False):
     errors = {}
     post_type = data.get("post_type")
@@ -235,7 +299,10 @@ def post_create(request):
     content_type = request.content_type or ""
     if content_type.startswith("multipart/form-data"):
         data = request.POST.dict()
-        data["category_id"] = int(data.get("category_id", 0)) if data.get("category_id") else 0
+        try:
+            data["category_id"] = int(data.get("category_id", 0)) if data.get("category_id") else 0
+        except (TypeError, ValueError):
+            return JsonResponse({"errors": {"category_id": "Unknown category."}}, status=400)
         payload, error_response = _validate_post_payload(data)
         if error_response:
             return error_response
@@ -245,17 +312,27 @@ def post_create(request):
         except (Category.DoesNotExist, ValueError):
             return JsonResponse({"errors": {"category_id": "Unknown category."}}, status=400)
 
+        media = {
+            "image": request.FILES.get("image"),
+            "video": request.FILES.get("video"),
+            "audio": request.FILES.get("audio"),
+        }
+        error_response = _validate_media_for_type(payload["post_type"], media)
+        if error_response:
+            return error_response
+
         post = Post.objects.create(
             author=request.user,
             category=category,
             **payload,
-            image=request.FILES.get("image"),
-            video=request.FILES.get("video"),
-            audio=request.FILES.get("audio"),
+            image=media["image"],
+            video=media["video"],
+            audio=media["audio"],
         )
-        tag_ids = data.get("tag_ids")
-        if isinstance(tag_ids, list):
-            tags = Tag.objects.filter(pk__in=[t for t in tag_ids if isinstance(t, int)])
+        tag_ids = request.POST.getlist("tag_ids")
+        if tag_ids:
+            numeric_ids = [int(t) for t in tag_ids if str(t).isdigit()]
+            tags = Tag.objects.filter(pk__in=numeric_ids)
             post.tags.set(tags)
     else:
         data = _parse_json_body(request)
@@ -278,7 +355,7 @@ def post_create(request):
             post.tags.set(tags)
 
     return JsonResponse(
-        {"post": serialize_post(post_list_queryset().get(pk=post.pk), viewer=request.user)},
+        {"post": serialize_post(post_list_queryset(request.user).get(pk=post.pk), viewer=request.user)},
         status=201,
     )
 
@@ -287,7 +364,7 @@ def post_detail(request, pk):
     if request.method != "GET":
         return _method_not_allowed()
     viewer = request.user if request.user.is_authenticated else None
-    post = get_object_or_404(post_list_queryset(), pk=pk)
+    post = get_object_or_404(post_list_queryset(viewer), pk=pk)
     return JsonResponse({"post": serialize_post(post, viewer=viewer)})
 
 
@@ -321,7 +398,7 @@ def post_update(request, pk):
         tags = Tag.objects.filter(pk__in=[t for t in data["tag_ids"] if isinstance(t, int)])
         post.tags.set(tags)
 
-    post = post_list_queryset().get(pk=post.pk)
+    post = post_list_queryset(request.user).get(pk=post.pk)
     return JsonResponse({"post": serialize_post(post, viewer=request.user)})
 
 

@@ -1,6 +1,7 @@
 {% extends "web/base.html" %}
 {% load web_extras %}
 {% block title %}{{ i18n.explore }} · Promptly{% endblock %}
+{% block description %}Explore trending AI prompts, popular categories and the creators to follow on Promptly.{% endblock %}
 
 {% block content %}
 <h1 class="page-title" data-i18n="explore">{{ i18n.explore }}</h1>
@@ -32,7 +33,7 @@
     <div class="creator-list">
       {% for creator in explore.popular_creators %}
         <a class="creator-row" href="{% url 'web:profile' creator.username %}">
-          <span class="creator-avatar lg">{{ creator.display_name|first|default:"?"|upper }}</span>
+          {% include "web/partials/avatar.html" with url=creator.profile_picture name=creator.display_name cls="creator-avatar lg" %}
           <span class="creator-info">
             <span class="creator-name">{{ creator.display_name }}</span>
             <span class="muted">{{ i18n.post_count|fmt:creator.post_count }}</span>

@@ -82,7 +82,7 @@ class PostEngagementApiTests(TestCase):
             reverse("interactions:record-copy", args=[self.post.pk]),
         )
 
-        self.assertEqual(response.status_code, 302)  # login redirect
+        self.assertEqual(response.status_code, 401)  # JSON unauthorized (API compat)
         self.assertEqual(PostCopy.objects.count(), 0)
 
     def test_authenticated_user_can_record_a_copy(self):
@@ -131,7 +131,7 @@ class ToggleLikeApiTests(TestCase):
     def test_requires_authentication(self):
         response = self.client.post(reverse("interactions:toggle-like", args=[self.post.pk]))
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(Like.objects.count(), 0)
 
     def test_like_then_unlike_roundtrip(self):
@@ -204,7 +204,7 @@ class CommentApiTests(TestCase):
             content_type="application/json",
         )
 
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(Comment.objects.count(), 0)
 
     def test_authenticated_user_can_comment_and_list(self):
