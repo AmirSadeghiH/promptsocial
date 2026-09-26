@@ -14,6 +14,9 @@
   var videoField = document.getElementById("video-field");
   var audioField = document.getElementById("audio-field");
   var promptField = document.getElementById("prompt-field");
+  var promptTextarea = promptField ? promptField.querySelector("textarea") : null;
+  var promptPreviewField = document.getElementById("prompt-preview-field");
+  var promptPreviewText = document.getElementById("prompt-preview-text");
   var errorBox = document.getElementById("create-error");
 
   function zone(field) {
@@ -49,8 +52,20 @@
     });
 
     // Prompt is the content of a text post; elsewhere it stays optional.
-    promptField.querySelector("textarea").required = isPrompt;
+    if (promptTextarea) promptTextarea.required = isPrompt;
+    updateTextPreview();
   }
+
+  /* The prompt doubles as the content of a text post, so mirror it into the
+     preview frame exactly as the media zones do for files. */
+  function updateTextPreview() {
+    if (!promptPreviewField || !promptPreviewText || !promptTextarea) return;
+    var value = (promptTextarea.value || "").trim();
+    promptPreviewField.hidden = !value;
+    promptPreviewText.textContent = value;
+  }
+
+  if (promptTextarea) promptTextarea.addEventListener("input", updateTextPreview);
 
   if (typeSelect) {
     typeSelect.addEventListener("change", updateFields);

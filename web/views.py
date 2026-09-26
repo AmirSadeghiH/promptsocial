@@ -2,6 +2,13 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from imagegen.models import AIConfig
+from imagegen.services import (
+    MAX_PROMPT_LENGTH,
+    prompt_library,
+    quota_state,
+    recent_generations,
+)
 from interactions.models import Follow, Save
 from notifications.models import Notification
 from notifications.services import serialize_notification, unread_count
@@ -112,6 +119,30 @@ def create_post_page(request):
     context = _base_context(request)
     context["category_options"] = Category.objects.all()
     return render(request, "web/create.html", context)
+
+
+def studio_page(request):
+    """The AI studio: a public prompt library plus this account's generations."""
+    config = AIConfig.load()
+    quota = quota_state(request.user)
+    generations = recent_generations(request.user)
+    context = {
+        **_base_context(request),
+        "library": prompt_library(),
+        "quota": quota,
+        "generations": generations,
+        "prompt_max_length": MAX_PROMPT_LENGTH,
+        # The canvas and the meters re-render from this without a reload.
+        # Rendered with |json_script so a prompt containing markup is escaped.
+        "studio_data": {"quota": quota, "generations": generations},
+        # Never hand the admin object to a template — only what it displays.
+        "provider": {
+            "model": config.model,
+            "size": config.image_size,
+            "ready": config.is_ready,
+        },
+    }
+    return render(request, "web/studio.html", context)
 
 
 def profile_page(request, username):

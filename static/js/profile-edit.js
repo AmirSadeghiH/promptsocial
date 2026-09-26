@@ -29,7 +29,7 @@
   const avatarImg = document.getElementById("avatar-img");
   const avatarFallback = document.getElementById("avatar-fallback");
   const avatarError = document.getElementById("avatar-error");
-  const AVATAR_MAX = 10 * 1024 * 1024; // must match posts/validation.py
+  const removeBtn = document.getElementById("avatar-remove");
 
   function showAvatarError(msg) {
     if (!avatarError) return;

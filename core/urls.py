@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/', include('account.urls')),
     path('api/posts/', include('posts.urls')),
     path('api/posts/', include('interactions.urls')),
+    path('api/', include('imagegen.urls')),
     path('api/', include('notifications.urls')),
     path('login/', auth_views.login_page, name='login'),
     path('signup/', auth_views.signup_page, name='signup'),

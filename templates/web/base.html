@@ -165,6 +165,10 @@
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
         <span data-i18n="explore">{{ i18n.explore }}</span>
       </a>
+      <a class="drawer-link {% if request.resolver_match.url_name == 'studio' %}active{% endif %}" href="{% url 'web:studio' %}" {% if request.resolver_match.url_name == 'studio' %}aria-current="page"{% endif %}>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3.5 13.9 9l5.6 1.9-5.6 2L12 18.5l-1.9-5.6L4.5 11 10.1 9z"/><path d="M18.5 3.5v3M20 5h-3"/></svg>
+        <span data-i18n="studio">{{ i18n.studio }}</span>
+      </a>
       <a class="drawer-link {% if request.resolver_match.url_name == 'feed' and request.resolver_match.kwargs.feed == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
         <span data-i18n="trending">{{ i18n.trending }}</span>
@@ -241,6 +245,10 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>
           <span data-i18n="explore">{{ i18n.explore }}</span>
         </a>
+        <a class="sidenav-link {% if request.resolver_match.url_name == 'studio' %}active{% endif %}" href="{% url 'web:studio' %}" {% if request.resolver_match.url_name == 'studio' %}aria-current="page"{% endif %}>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3.5 13.9 9l5.6 1.9-5.6 2L12 18.5l-1.9-5.6L4.5 11 10.1 9z"/><path d="M18.5 3.5v3M20 5h-3"/></svg>
+          <span data-i18n="studio">{{ i18n.studio }}</span>
+        </a>
         <a class="sidenav-link {% if request.resolver_match.url_name == 'feed' and request.resolver_match.kwargs.feed == 'trending' %}active{% endif %}" href="{% url 'web:feed' 'trending' %}">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>
           <span data-i18n="trending">{{ i18n.trending }}</span>
@@ -296,6 +304,7 @@
         <h4 id="footer-explore" data-i18n="footer_explore">{{ i18n.footer_explore }}</h4>
         <a href="{% url 'web:home' %}" data-i18n="home">{{ i18n.home }}</a>
         <a href="{% url 'web:explore' %}" data-i18n="explore">{{ i18n.explore }}</a>
+        <a href="{% url 'web:studio' %}" data-i18n="studio">{{ i18n.studio }}</a>
         <a href="{% url 'web:feed' 'trending' %}" data-i18n="trending">{{ i18n.trending }}</a>
         <a href="{% url 'web:feed' 'latest' %}" data-i18n="latest">{{ i18n.latest }}</a>
       </nav>

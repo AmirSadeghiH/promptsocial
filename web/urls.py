@@ -11,6 +11,7 @@ urlpatterns = [
     path("explore/", views.explore_page, name="explore"),
     path("search/", views.search_page, name="search"),
     path("create/", views.create_post_page, name="create"),
+    path("studio/", views.studio_page, name="studio"),
     path("saved/", views.saved_page, name="saved"),
     path("notifications/", views.notifications_page, name="notifications"),
     path("profile/<str:username>/", views.profile_page, name="profile"),

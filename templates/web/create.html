@@ -37,6 +37,16 @@
     <input type="text" name="ai_model" maxlength="100" placeholder="{{ i18n.ai_model_placeholder }}">
   </label>
 
+  <!-- Text content preview: the prompt itself is the media for a text post,
+       so it renders inside the same frame style used for image/video/audio. -->
+  <div class="field" id="prompt-preview-field" hidden>
+    <div class="upload-preview">
+      <div class="up-preview-frame">
+        <p class="up-preview-text" id="prompt-preview-text" dir="auto"></p>
+      </div>
+    </div>
+  </div>
+
   <label class="field" id="prompt-field">
     <span data-i18n="the_prompt">{{ i18n.the_prompt }}</span>
     <textarea name="prompt" id="id_prompt" rows="6" placeholder="{{ i18n.prompt_placeholder }}"></textarea>

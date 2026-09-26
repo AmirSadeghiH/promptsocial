@@ -1,0 +1,189 @@
+{% extends "web/base.html" %}
+{% load static web_extras %}
+{% block title %}{{ i18n.studio }} · Promptly{% endblock %}
+{% block description %}Generate your own AI images in the Promptly studio: copy a prompt from the community library, or write one, and run it through {{ provider.model }}.{% endblock %}
+{% block og_title %}{{ i18n.studio }} · Promptly{% endblock %}
+{% block og_description %}Copy a prompt, generate an image. Three free generations a day on Promptly.{% endblock %}
+
+{% block content %}
+<div class="studio-head">
+  <div class="studio-head-text">
+    <h1 class="page-title" data-i18n="studio">{{ i18n.studio }}</h1>
+    <p class="studio-sub" data-i18n="studio_subtitle">{{ i18n.studio_subtitle }}</p>
+  </div>
+  <div class="studio-chip" {% if not provider.ready %}data-off="true"{% endif %}>
+    <span class="studio-chip-dot" aria-hidden="true"></span>
+    <span class="studio-chip-text">
+      <span class="studio-chip-label" data-i18n="studio_model">{{ i18n.studio_model }}</span>
+      <b>{{ provider.model }}</b>
+      <span class="studio-chip-size">{{ provider.size }}</span>
+    </span>
+  </div>
+</div>
+
+{% comment %}
+  Two columns: the composer on the left (what you type) and the allowance on
+  the right (what you have left). The canvas below is where the image lands.
+{% endcomment %}
+<div class="studio-top">
+  <section class="studio-composer" aria-labelledby="studio-composer-title">
+    <h2 class="sr-only" id="studio-composer-title" data-i18n="studio_composer">{{ i18n.studio_composer }}</h2>
+
+    <form id="studio-form" novalidate data-max-length="{{ prompt_max_length }}">
+      <label class="field studio-field">
+        <span data-i18n="studio_prompt_label">{{ i18n.studio_prompt_label }}</span>
+        <textarea id="studio-prompt" name="prompt" rows="5" maxlength="{{ prompt_max_length }}"
+                  placeholder="{{ i18n.studio_prompt_placeholder }}"></textarea>
+      </label>
+
+      <div class="studio-ref" id="studio-ref" hidden>
+        <span class="studio-ref-media" id="studio-ref-media" aria-hidden="true"></span>
+        <span class="studio-ref-body">
+          <span class="studio-ref-label" data-i18n="studio_reference">{{ i18n.studio_reference }}</span>
+          <span class="studio-ref-text" id="studio-ref-text" dir="auto"></span>
+        </span>
+        <button type="button" class="studio-ref-clear" id="studio-ref-clear"
+                aria-label="{{ i18n.studio_reference_clear }}" title="{{ i18n.studio_reference_clear }}">×</button>      </div>
+
+      <div class="studio-actions">
+        <span class="studio-count"><b id="studio-count">0</b>/{{ prompt_max_length }}</span>
+        {% if user.is_authenticated %}
+          <button class="btn btn-primary btn-lg" type="submit" id="studio-submit">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 3 14 9-14 9z"/></svg>
+            <span data-i18n="studio_generate">{{ i18n.studio_generate }}</span>
+          </button>
+        {% else %}
+          <a class="btn btn-primary btn-lg" href="{% url 'login' %}?next={% url 'web:studio' %}">
+            <span data-i18n="login_to_generate">{{ i18n.login_to_generate }}</span>
+          </a>
+        {% endif %}
+      </div>
+
+      {% if not provider.ready %}
+        <p class="studio-note studio-note-warn" id="studio-disabled" data-i18n="studio_disabled">{{ i18n.studio_disabled }}</p>
+      {% endif %}
+      <p class="studio-note studio-note-alert" id="studio-error" hidden role="alert"></p>
+    </form>
+  </section>
+
+  <aside class="studio-quota" aria-labelledby="studio-quota-title">
+    <h2 class="studio-quota-title" id="studio-quota-title" data-i18n="studio_quota_title">{{ i18n.studio_quota_title }}</h2>
+
+    {% if user.is_authenticated %}
+      {% for window in quota %}
+        <div class="quota-row" data-quota-key="{{ window.key }}"
+             data-used="{{ window.used }}" data-limit="{{ window.limit }}">
+          <div class="quota-row-head">
+            <span class="quota-label" data-i18n="{{ window.label_key }}">{{ i18n|get:window.label_key }}</span>
+            <span class="quota-value" dir="ltr"><b>{{ window.used }}</b><span>/{{ window.limit }}</span></span>
+          </div>
+          <div class="quota-bar" role="img"
+               aria-label="{{ window.used }} / {{ window.limit }}">
+            <span class="quota-fill" style="width: {{ window.percent }}%"></span>
+          </div>
+          <span class="quota-reset" data-reset="{{ window.reset_in_seconds }}"></span>
+        </div>
+      {% endfor %}
+      <p class="studio-quota-foot muted" data-i18n="studio_quota_foot">{{ i18n.studio_quota_foot }}</p>
+    {% else %}
+      <ul class="quota-list">
+        <li><b>3</b> <span data-i18n="studio_quota_day">{{ i18n.studio_quota_day }}</span></li>
+        <li><b>7</b> <span data-i18n="studio_quota_week">{{ i18n.studio_quota_week }}</span></li>
+        <li><b>15</b> <span data-i18n="studio_quota_month">{{ i18n.studio_quota_month }}</span></li>
+      </ul>
+      <a class="btn btn-outline btn-sm studio-quota-cta" href="{% url 'signup' %}">
+        <span data-i18n="studio_quota_cta">{{ i18n.studio_quota_cta }}</span>
+      </a>
+    {% endif %}
+  </aside>
+</div>
+
+<section class="studio-canvas" id="studio-canvas" aria-labelledby="studio-canvas-title" aria-live="polite">
+  <h2 class="sr-only" id="studio-canvas-title" data-i18n="studio_result_title">{{ i18n.studio_result_title }}</h2>
+  {% comment %}
+    JS paints this area: the empty "latent" plate, the developing sweep while a
+    request is in flight, and the finished image. One renderer, one place.
+  {% endcomment %}
+</section>
+
+<section class="section studio-library-section">
+  <div class="studio-library-head">
+    <h2 class="section-title" data-i18n="studio_library_title">{{ i18n.studio_library_title }}</h2>
+    <p class="studio-library-hint muted" data-i18n="studio_library_hint">{{ i18n.studio_library_hint }}</p>
+  </div>
+
+  <div class="prompt-library">
+    {% for item in library %}
+      <article class="prompt-card" data-post-id="{{ item.post_id }}" data-prompt="{{ item.prompt }}">
+        <div class="prompt-card-media">
+          {% if item.image %}
+            <img src="{{ item.image }}" alt="" loading="lazy" decoding="async">
+          {% else %}
+            <div class="prompt-card-texture" aria-hidden="true"></div>
+          {% endif %}
+          {% if item.ai_model %}<span class="prompt-card-model">{{ item.ai_model }}</span>{% endif %}
+        </div>
+        <div class="prompt-card-body">
+          <h3 class="prompt-card-title">{{ item.title }}</h3>
+          <p class="prompt-card-text" dir="auto">{{ item.excerpt }}</p>
+          <div class="prompt-card-foot">
+            <a class="prompt-card-author" href="{% url 'web:profile' item.author %}" dir="auto">@{{ item.author }}</a>
+            <div class="prompt-card-actions">
+              <button type="button" class="btn btn-ghost btn-sm" data-studio-copy
+                      title="{{ i18n.studio_copy_prompt }}">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                <span data-i18n="studio_copy_prompt">{{ i18n.studio_copy_prompt }}</span>
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" data-studio-use>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                <span data-i18n="studio_use_prompt">{{ i18n.studio_use_prompt }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty-state">
+        <p data-i18n="studio_empty_library">{{ i18n.studio_empty_library }}</p>
+        <a class="btn btn-primary btn-sm" href="{% url 'web:create' %}" data-i18n="share_a_prompt">{{ i18n.share_a_prompt }}</a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if user.is_authenticated %}
+<section class="section">
+  <h2 class="section-title" data-i18n="studio_my_generations">{{ i18n.studio_my_generations }}</h2>
+  <div class="generation-grid" id="studio-generations"></div>
+  <noscript><p class="muted" data-i18n="studio_needs_js">{{ i18n.studio_needs_js }}</p></noscript>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block json_ld_extra %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type": "ListItem", "position": 1, "name": "Promptly", "item": "{{ request.scheme }}://{{ request.get_host }}/"},
+      {"@type": "ListItem", "position": 2, "name": "{{ i18n.studio|escapejs }}", "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'web:studio' %}"}
+    ]
+  }
+  </script>
+{% endblock %}
+
+{% block scripts %}
+{{ studio_data|json_script:"studio-data" }}
+<script>
+  window.PROMPTLY_STUDIO = {
+    endpoint: "{% url 'imagegen:generate' %}",
+    dataId: "studio-data",
+    canGenerate: {% if user.is_authenticated and provider.ready %}true{% else %}false{% endif %},
+    loginUrl: "{% url 'login' %}?next={% url 'web:studio' %}",
+    createUrl: "{% url 'web:create' %}",
+    maxLength: {{ prompt_max_length }}
+  };
+</script>
+<script src="{% static 'js/studio.js' %}" defer></script>
+{% endblock %}

@@ -130,8 +130,10 @@
     previewWrap.className = "upload-preview";
     previewWrap.hidden = true;
 
-    container.insertBefore(frame, input);
+    // Preview sits *above* the field; the zone stays visible underneath as a
+    // compact "choose another file" control once a file is attached.
     container.insertBefore(previewWrap, input);
+    container.insertBefore(frame, input);
     input.hidden = true;
 
     var errorBox = document.createElement("div");
@@ -181,10 +183,6 @@
       head.appendChild(remove);
       previewWrap.appendChild(head);
 
-      if (kind === "text") {
-        // For text kind the caller wires a textarea preview elsewhere.
-        return;
-      }
       var media = buildPreview(kind, file);
       if (media) {
         var holder = document.createElement("div");
@@ -195,7 +193,7 @@
         if (global.PromptlyPlayer) global.PromptlyPlayer.init();
       }
       previewWrap.hidden = false;
-      frame.hidden = true;
+      frame.hidden = false;
       frame.classList.add("has-file");
     }
 

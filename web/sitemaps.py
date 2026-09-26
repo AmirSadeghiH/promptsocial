@@ -73,6 +73,7 @@ class StaticViewSitemap(Sitemap):
     _entries = (
         ("home", ()),
         ("explore", ()),
+        ("studio", ()),
         ("feed", ("trending",)),
         ("feed", ("latest",)),
     )

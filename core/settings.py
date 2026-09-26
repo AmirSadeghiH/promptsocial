@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'account',
     'posts',
+    'imagegen',
     'interactions',
     'notifications',
     'web',
